@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #FAF7F0;
+  color: #1F2937;
+  font-family: 'Inter', sans-serif;
+}
+
+@layer components {
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-navy/20 bg-white text-ink
+           focus:outline-none focus:ring-2 focus:ring-navy/40 focus:border-navy transition-colors;
+  }
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl bg-navy text-paper font-semibold
+           hover:bg-navyDark transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl border border-navy/25 text-navy font-semibold
+           hover:bg-navy/5 transition-colors;
+  }
+}
