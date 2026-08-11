@@ -6,6 +6,7 @@ import { generaPiano } from '../lib/aiClient';
 export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData }) {
   const [caricando, setCaricando] = useState(!planData);
   const [errore, setErrore] = useState(null);
+  const [tentativo, setTentativo] = useState(0);
 
   useEffect(() => {
     if (planData) return;
@@ -15,7 +16,7 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
       .then((data) => onPlanReady(data))
       .catch((e) => setErrore(e.message))
       .finally(() => setCaricando(false));
-  }, []);
+  }, [tentativo]);
 
   return (
     <div>
@@ -26,13 +27,17 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
 
       {caricando && (
         <div className="text-navy/60 text-sm py-8">
-          Sto cercando fonti reali e costruendo le fasi — può richiedere qualche secondo...
+          Sto cercando fonti reali e costruendo le fasi — può richiedere 20-40 secondi.
+          Tieni lo schermo acceso e non cambiare app fino alla fine.
         </div>
       )}
 
       {errore && (
         <div className="bg-nonTrovata/10 border border-nonTrovata/30 rounded-xl p-4 text-sm text-navy mb-6">
-          Non sono riuscito a generare il piano: {errore}
+          <p className="mb-3">Non sono riuscito a generare il piano: {errore}</p>
+          <button className="btn-secondary text-sm" onClick={() => setTentativo((t) => t + 1)}>
+            Riprova
+          </button>
         </div>
       )}
 

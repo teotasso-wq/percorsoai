@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 4000,
+        max_tokens: 8000,
         system: METHOD_SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
         tools: [{ type: "web_search_20250305", name: "web_search" }],
@@ -42,12 +42,11 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Errore AI: ${errText}`);
+      throw new Error(`Errore AI (HTTP ${response.status}): ${errText}`);
     }
 
     const data = await response.json();
-    const textBlock = data.content.find((b) => b.type === "text");
-    const parsed = JSON.parse(textBlock?.text ?? "{}");
+    const parsed = extractJSON(data);
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "content-type": "application/json" },
@@ -60,6 +59,39 @@ Deno.serve(async (req) => {
   }
 });
 
+// Estrae il JSON dalla risposta dell'AI in modo resistente:
+// prende TUTTI i blocchi di testo (non solo l'ultimo), li unisce,
+// poi isola solo la parte tra la prima { e l'ultima } — ignorando
+// qualunque cosa l'AI abbia scritto prima o dopo (blocchi ```json,
+// commenti, spiegazioni), che è la causa più comune di errore.
+function extractJSON(data) {
+  const textBlocks = (data.content || []).filter((b) => b.type === "text");
+
+  if (textBlocks.length === 0) {
+    throw new Error("L'AI non ha restituito testo. Risposta grezza: " + JSON.stringify(data).slice(0, 500));
+  }
+
+  const fullText = textBlocks.map((b) => b.text).join("\n");
+
+  const start = fullText.indexOf("{");
+  const end = fullText.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("Nessun JSON trovato nella risposta. Testo ricevuto: " + fullText.slice(0, 500));
+  }
+
+  const candidate = fullText.slice(start, end + 1);
+
+  try {
+    return JSON.parse(candidate);
+  } catch (e) {
+    throw new Error(
+      "JSON non valido dopo l'estrazione: " + e.message +
+      " | Anteprima: " + candidate.slice(0, 300)
+    );
+  }
+}
+
 function buildUserPrompt(stage, formData, duration) {
   const base = `
 Dati raccolti dall'utente:
@@ -70,8 +102,16 @@ Dati raccolti dall'utente:
 - Criterio di successo: ${formData.criterioSuccesso}
 `;
 
+  const formatWarning = `
+IMPORTANTE SUL FORMATO DELLA RISPOSTA:
+- Rispondi SOLO con l'oggetto JSON richiesto, niente altro.
+- NON usare blocchi di codice markdown (niente \`\`\`json, niente \`\`\`).
+- NON aggiungere commenti, spiegazioni o testo prima o dopo il JSON.
+- La tua risposta deve iniziare direttamente con { e finire con }.
+`;
+
   if (stage === "duration") {
-    return `${base}
+    return `${base}${formatWarning}
 Genera 3 proposte di durata (minima realistica, consigliata, comoda) in
 settimane, con una breve nota per ciascuna. Rispondi in JSON con questa
 forma esatta:
@@ -84,7 +124,9 @@ forma esatta:
     return `${base}
 Durata scelta: ${duration.weeks} settimane.
 Fai una ricerca web reale per trovare 3-5 fonti affidabili sull'ambito.
-Poi genera 4-6 fasi. Rispondi in JSON con questa forma esatta:
+${formatWarning}
+Dopo aver finito la ricerca, genera 4-6 fasi. Rispondi in JSON con questa
+forma esatta:
 {"sources":[{"title":"...","tipo":"...","affidabilita":"Alta|Media|Bassa","notebooklm":true,"stato":"verificato|dedotto|assunto|non_trovata","url":"..."}],
 "phases":[{"id":1,"titolo":"...","durata":"N sett. · N h/sett.","tag":"verificato|dedotto|assunto",
 "obiettivo":"...","prerequisiti":["..."],
@@ -93,7 +135,7 @@ Poi genera 4-6 fasi. Rispondi in JSON con questa forma esatta:
   }
 
   if (stage === "audit") {
-    return `${base}
+    return `${base}${formatWarning}
 Esegui l'audit del piano allegato: ${JSON.stringify(duration)}.
 Applica la REGOLA DI COERENZA AUDIT. Rispondi in JSON con questa forma
 esatta:
@@ -101,6 +143,21 @@ esatta:
 "kpi":{"Completezza":N,"Copertura prerequisiti":N,"Progressione didattica":N,
 "Coerenza carico-tempo":N,"Qualità fonti":N,"Rapporto teoria-pratica":N},
 "rischio":"Basso|Medio|Alto","verdetto":"APPROVATO|APPROVATO CON LIMITI|DA REVISIONARE"}`;
+  }
+
+  if (stage === "explanation") {
+    return `${base}${formatWarning}
+Genera la spiegazione discorsiva della seguente fase del percorso, a
+livello adatto al livello di partenza dichiarato, con almeno un esempio
+pratico per ogni competenza elencata:
+
+Fase: ${duration.titolo}
+Obiettivo: ${duration.obiettivo}
+Competenze da spiegare: ${duration.competenze.map((c) => c.testo).join('; ')}
+
+Scrivi 3-5 paragrafi (in totale circa 400-600 parole). Rispondi in JSON
+con questa forma esatta:
+{"paragrafi":[{"testo":"...","tag":"verificato|dedotto|assunto"}]}`;
   }
 
   return base;

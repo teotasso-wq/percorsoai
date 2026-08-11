@@ -34,3 +34,7 @@ export function generaPiano(formData, duration) {
 export function generaAudit(formData, planData) {
   return chiamaFunzione({ stage: 'audit', formData, duration: planData });
 }
+
+export function generaSpiegazione(formData, phase) {
+  return chiamaFunzione({ stage: 'explanation', formData, duration: phase });
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Badge from './Badge';
 import CopyButton from './CopyButton';
+import { generaSpiegazione } from '../lib/aiClient';
 
 function buildNotebookPrompts(phase, formData) {
   return [
@@ -29,7 +30,18 @@ function buildNotebookPrompts(phase, formData) {
 
 export default function PhaseCard({ phase, formData }) {
   const [aperta, setAperta] = useState(false);
-  const [spiegazioneVisibile, setSpiegazioneVisibile] = useState(false);
+  const [spiegazione, setSpiegazione] = useState(null);
+  const [caricandoSpiegazione, setCaricandoSpiegazione] = useState(false);
+  const [erroreSpiegazione, setErroreSpiegazione] = useState(null);
+
+  const richiediSpiegazione = () => {
+    setCaricandoSpiegazione(true);
+    setErroreSpiegazione(null);
+    generaSpiegazione(formData, phase)
+      .then((data) => setSpiegazione(data.paragrafi || []))
+      .catch((e) => setErroreSpiegazione(e.message))
+      .finally(() => setCaricandoSpiegazione(false));
+  };
 
   const prompts = buildNotebookPrompts(phase, formData);
 
@@ -79,21 +91,36 @@ export default function PhaseCard({ phase, formData }) {
 
           {/* Spiegazione diretta — generata al primo click (lazy loading) */}
           <div>
-            {!spiegazioneVisibile ? (
-              <button
-                className="btn-secondary text-sm"
-                onClick={() => setSpiegazioneVisibile(true)}
-              >
+            {!spiegazione && !caricandoSpiegazione && (
+              <button className="btn-secondary text-sm" onClick={richiediSpiegazione}>
                 Mostra spiegazione della fase
               </button>
-            ) : (
+            )}
+
+            {caricandoSpiegazione && (
+              <p className="text-sm text-navy/60">Sto scrivendo la spiegazione...</p>
+            )}
+
+            {erroreSpiegazione && (
+              <div className="bg-nonTrovata/10 border border-nonTrovata/30 rounded-xl p-4 text-sm text-navy">
+                <p className="mb-2">Non sono riuscito a generarla: {erroreSpiegazione}</p>
+                <button className="btn-secondary text-sm" onClick={richiediSpiegazione}>
+                  Riprova
+                </button>
+              </div>
+            )}
+
+            {spiegazione && (
               <div>
-                <h4 className="font-display text-lg text-navy mb-2">Spiegazione della fase</h4>
-                <p className="text-sm text-ink/50 italic">
-                  Qui comparirà la spiegazione discorsiva generata dall'AI (400-600 parole,
-                  con esempi ed etichette Verificato/Dedotto/Assunto) — si attiva quando
-                  colleghiamo l'AI vera nella Tappa 3 della guida.
-                </p>
+                <h4 className="font-display text-lg text-navy mb-3">Spiegazione della fase</h4>
+                <div className="space-y-3">
+                  {spiegazione.map((p, i) => (
+                    <div key={i}>
+                      <p className="text-sm text-ink mb-1">{p.testo}</p>
+                      <Badge type={p.tag} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
