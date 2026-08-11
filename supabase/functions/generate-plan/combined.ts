@@ -185,5 +185,20 @@ esatta:
 "rischio":"Basso|Medio|Alto","verdetto":"APPROVATO|APPROVATO CON LIMITI|DA REVISIONARE"}`;
   }
 
+  if (stage === "explanation") {
+    return `${base}${formatWarning}
+Genera la spiegazione discorsiva della seguente fase del percorso, a
+livello adatto al livello di partenza dichiarato, con almeno un esempio
+pratico per ogni competenza elencata:
+
+Fase: ${duration.titolo}
+Obiettivo: ${duration.obiettivo}
+Competenze da spiegare: ${duration.competenze.map((c) => c.testo).join('; ')}
+
+Scrivi 3-5 paragrafi (in totale circa 400-600 parole). Rispondi in JSON
+con questa forma esatta:
+{"paragrafi":[{"testo":"...","tag":"verificato|dedotto|assunto"}]}`;
+  }
+
   return base;
 }

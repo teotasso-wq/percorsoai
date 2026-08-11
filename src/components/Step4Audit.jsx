@@ -7,16 +7,20 @@ const RISCHIO_COLORE = {
   Alto: 'bg-nonTrovata/10 text-nonTrovata',
 };
 
-export default function Step4Audit({ formData, planData, onBack }) {
-  const [audit, setAudit] = useState(null);
+export default function Step4Audit({ formData, planData, auditDataIniziale, onAuditReady, onBack }) {
+  const [audit, setAudit] = useState(auditDataIniziale);
   const [errore, setErrore] = useState(null);
-  const [caricando, setCaricando] = useState(true);
+  const [caricando, setCaricando] = useState(!auditDataIniziale);
 
   useEffect(() => {
+    if (auditDataIniziale) return;
     setCaricando(true);
     setErrore(null);
     generaAudit(formData, planData)
-      .then(setAudit)
+      .then((data) => {
+        setAudit(data);
+        onAuditReady(data);
+      })
       .catch((e) => setErrore(e.message))
       .finally(() => setCaricando(false));
   }, []);
