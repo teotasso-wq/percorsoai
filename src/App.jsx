@@ -17,6 +17,7 @@ export default function App() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(FORM_INIZIALE);
   const [durata, setDurata] = useState(null);
+  const [planData, setPlanData] = useState(null);
 
   return (
     <div className="min-h-screen bg-paper">
@@ -45,8 +46,10 @@ export default function App() {
         {step === 2 && (
           <Step2Duration
             selected={durata}
+            formData={formData}
             onNext={(d) => {
               setDurata(d);
+              setPlanData(null);
               setStep(3);
             }}
             onBack={() => setStep(1)}
@@ -56,12 +59,17 @@ export default function App() {
         {step === 3 && (
           <Step3Plan
             formData={formData}
+            duration={durata}
+            planData={planData}
+            onPlanReady={setPlanData}
             onNext={() => setStep(4)}
             onBack={() => setStep(2)}
           />
         )}
 
-        {step === 4 && <Step4Audit onBack={() => setStep(3)} />}
+        {step === 4 && (
+          <Step4Audit formData={formData} planData={planData} onBack={() => setStep(3)} />
+        )}
       </main>
     </div>
   );
