@@ -1,10 +1,38 @@
 import { useState } from 'react';
+import { estraiTestoDaPdf } from '../lib/pdfReader';
+import { inferisciLivelloDaCv } from '../lib/aiClient';
 
 const AMBITI_SENSIBILI = ['elettric', 'clinic', 'medic', 'chirurg', 'idraulic', 'gas', 'saldatur', 'macchinari'];
 
 export default function Step1Form({ data, onNext }) {
   const [form, setForm] = useState(data);
   const [approfondisci, setApprofondisci] = useState(false);
+  const [caricandoCv, setCaricandoCv] = useState(false);
+  const [notaCv, setNotaCv] = useState(null);
+  const [erroreCv, setErroreCv] = useState(null);
+
+  const gestisciCaricamentoCv = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!form.ambito) {
+      setErroreCv('Scrivi prima l\'ambito, così posso valutare il CV rispetto a quello.');
+      return;
+    }
+    setCaricandoCv(true);
+    setErroreCv(null);
+    setNotaCv(null);
+    try {
+      const testoCv = await estraiTestoDaPdf(file);
+      const risultato = await inferisciLivelloDaCv(form.ambito, testoCv);
+      setForm((f) => ({ ...f, livello: risultato.livello }));
+      setNotaCv(risultato.nota);
+      setApprofondisci(true);
+    } catch (err) {
+      setErroreCv('Non sono riuscito a leggere il PDF: ' + err.message);
+    } finally {
+      setCaricandoCv(false);
+    }
+  };
 
   const ambitoSensibile = AMBITI_SENSIBILI.some((k) =>
     form.ambito.toLowerCase().includes(k)
@@ -47,6 +75,27 @@ export default function Step1Form({ data, onNext }) {
             onChange={set('obiettivo')}
           />
         </Field>
+
+        <div>
+          <label className="block text-sm font-semibold text-navy mb-2">
+            Carica il tuo CV (facoltativo, PDF)
+          </label>
+          <p className="text-xs text-ink/50 mb-2">
+            Lo usiamo solo per capire il tuo livello di partenza reale — non viene salvato da nessuna parte.
+          </p>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={gestisciCaricamentoCv}
+            disabled={caricandoCv}
+            className="text-sm"
+          />
+          {caricandoCv && <p className="text-xs text-navy/60 mt-2">Sto leggendo il CV...</p>}
+          {notaCv && (
+            <p className="text-xs text-verificato mt-2">✓ Livello impostato su "{form.livello}": {notaCv}</p>
+          )}
+          {erroreCv && <p className="text-xs text-nonTrovata mt-2">{erroreCv}</p>}
+        </div>
 
         {!approfondisci && (
           <button

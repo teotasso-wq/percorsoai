@@ -54,3 +54,19 @@ export function suggerisciProssimoPiano(pianiCompletati) {
     duration: pianiCompletati,
   });
 }
+
+export function inferisciLivelloDaCv(ambito, testoCv) {
+  return chiamaFunzione({
+    stage: 'inferisci_livello',
+    formData: { ambito, obiettivo: '', livello: '', oreSettimanali: '', criterioSuccesso: '' },
+    duration: { ambito, testoCv },
+  });
+}
+
+export function traduciPiano(piano, lingua) {
+  return chiamaFunzione({
+    stage: 'traduci_piano',
+    formData: { ambito: '', obiettivo: '', livello: '', oreSettimanali: '', criterioSuccesso: '' },
+    duration: { piano, lingua },
+  });
+}

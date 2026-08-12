@@ -202,5 +202,36 @@ in JSON con questa forma esatta:
 {"ambito":"...","obiettivo":"...","motivazione":"perché ha senso come prossimo passo, 1-2 frasi"}`;
   }
 
+  if (stage === "inferisci_livello") {
+    return `
+Ambito che l'utente vuole imparare: ${duration.ambito}
+
+Testo estratto dal CV dell'utente:
+"""
+${duration.testoCv.slice(0, 6000)}
+"""
+${formatWarning}
+Analizza il CV e deduci il livello di partenza più realistico
+dell'utente rispetto all'ambito indicato (principiante, intermedio,
+avanzato), basandoti su esperienze, competenze o studi pertinenti
+citati nel CV. Se il CV non contiene nulla di pertinente, scegli
+"principiante" e dillo chiaramente nella nota. Rispondi in JSON con
+questa forma esatta:
+{"livello":"principiante|intermedio|avanzato","nota":"breve spiegazione del perché, 1-2 frasi"}`;
+  }
+
+  if (stage === "traduci_piano") {
+    return `${formatWarning}
+Traduci in ${duration.lingua} il seguente piano di studio, mantenendo
+ESATTAMENTE la stessa struttura JSON e gli stessi tag (verificato,
+dedotto, assunto, non_trovata, memoria, consultabile — questi valori
+di enum non vanno tradotti, solo il testo). Non aggiungere o togliere
+contenuto, solo traduci fedelmente:
+
+${JSON.stringify(duration.piano)}
+
+Rispondi con lo stesso oggetto JSON tradotto, stessa struttura esatta.`;
+  }
+
   return base;
 }

@@ -2,13 +2,49 @@ import { useEffect, useState } from 'react';
 import PhaseCard from './PhaseCard';
 import Badge from './Badge';
 import ObiettivoSettimanale from './ObiettivoSettimanale';
-import { generaPiano, rigeneraFonte } from '../lib/aiClient';
+import { generaPiano, rigeneraFonte, traduciPiano } from '../lib/aiClient';
+import { leggiPianoAdAltaVoce, fermaLetturaVocale } from '../lib/textToSpeech';
+
+const LINGUE = [
+  { codice: 'inglese', etichetta: 'English' },
+  { codice: 'spagnolo', etichetta: 'Español' },
+  { codice: 'francese', etichetta: 'Français' },
+];
 
 export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData, pianoSalvato, onSalvaObiettivo, onSegnala }) {
   const [caricando, setCaricando] = useState(!planData);
   const [errore, setErrore] = useState(null);
   const [tentativo, setTentativo] = useState(0);
   const [rigenerandoIndice, setRigenerandoIndice] = useState(null);
+  const [traducendo, setTraducendo] = useState(false);
+  const [inAscolto, setInAscolto] = useState(false);
+
+  const traduci = async (lingua) => {
+    setTraducendo(true);
+    try {
+      const piano = { sources: planData.sources, phases: planData.phases };
+      const tradotto = await traduciPiano(piano, lingua);
+      onPlanReady(tradotto);
+    } catch (e) {
+      setErrore('Non sono riuscito a tradurre il piano: ' + e.message);
+    } finally {
+      setTraducendo(false);
+    }
+  };
+
+  const ascolta = () => {
+    if (inAscolto) {
+      fermaLetturaVocale();
+      setInAscolto(false);
+      return;
+    }
+    try {
+      leggiPianoAdAltaVoce(planData, formData.ambito);
+      setInAscolto(true);
+    } catch (e) {
+      setErrore(e.message);
+    }
+  };
 
   const rigenera = async (indice) => {
     setRigenerandoIndice(indice);
@@ -48,6 +84,27 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
       <p className="text-ink/60 mb-8">
         Ogni fase mostra obiettivo, prerequisiti, competenze e i materiali per studiare.
       </p>
+
+      {planData && (
+        <div className="flex flex-wrap gap-3 mb-8">
+          <button
+            className={`btn-secondary text-sm ${inAscolto ? 'bg-navy text-paper' : ''}`}
+            onClick={ascolta}
+          >
+            {inAscolto ? '⏸ Ferma lettura' : '🔊 Ascolta il piano'}
+          </button>
+          {LINGUE.map((l) => (
+            <button
+              key={l.codice}
+              className="btn-secondary text-sm disabled:opacity-40"
+              onClick={() => traduci(l.codice)}
+              disabled={traducendo}
+            >
+              {traducendo ? 'Traduco...' : `🌐 ${l.etichetta}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       {planData && pianoSalvato && (
         <ObiettivoSettimanale piano={pianoSalvato} onSalva={onSalvaObiettivo} />
