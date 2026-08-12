@@ -13,6 +13,7 @@ import Step3Plan from './components/Step3Plan';
 import Step4Audit from './components/Step4Audit';
 import PrintPianoCompleto from './components/PrintPianoCompleto';
 import PrintPortfolio from './components/PrintPortfolio';
+import Guida from './components/Guida';
 import { useLingua } from './lib/LinguaContext';
 
 const FORM_INIZIALE = {
@@ -36,6 +37,7 @@ export default function App() {
   const [pianoSalvato, setPianoSalvato] = useState(null);
   const [streak, setStreak] = useState(null);
   const [mostraTutorial, setMostraTutorial] = useState(false);
+  const [mostraGuida, setMostraGuida] = useState(false);
 
   useEffect(() => {
     if (sessione && !localStorage.getItem('percorsoai_tutorial_visto')) {
@@ -161,6 +163,10 @@ export default function App() {
     );
   }
 
+  if (mostraGuida) {
+    return <Guida onClose={() => setMostraGuida(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-paper">
       {mostraTutorial && <Tutorial onClose={chiudiTutorial} />}
@@ -176,6 +182,9 @@ export default function App() {
             {streak !== null && streak > 0 && (
               <span className="text-sm font-semibold text-dedotto">🔥 {streak} {streak === 1 ? 'giorno' : 'giorni'}</span>
             )}
+            <button className="text-sm text-navy/60 underline" onClick={() => setMostraGuida(true)}>
+              {t('guida')}
+            </button>
             <button className="text-sm text-navy/60 underline" onClick={() => setVista('statistiche')}>
               Statistiche
             </button>

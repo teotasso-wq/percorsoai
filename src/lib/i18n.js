@@ -13,6 +13,7 @@ const DIZIONARIO = {
   it: {
     app_nome: 'PercorsoAI',
     esci: 'Esci',
+    guida: 'Guida',
     indietro: '← Indietro',
     continua: 'Continua',
     salta: 'Salta',
@@ -150,6 +151,7 @@ const DIZIONARIO = {
   en: {
     app_nome: 'PercorsoAI',
     esci: 'Sign out',
+    guida: 'Guide',
     indietro: '← Back',
     continua: 'Continue',
     salta: 'Skip',
@@ -276,6 +278,7 @@ const DIZIONARIO = {
   es: {
     app_nome: 'PercorsoAI',
     esci: 'Salir',
+    guida: 'Guía',
     indietro: '← Atrás',
     continua: 'Continuar',
     salta: 'Saltar',
@@ -402,6 +405,7 @@ const DIZIONARIO = {
   fr: {
     app_nome: 'PercorsoAI',
     esci: 'Déconnexion',
+    guida: 'Guide',
     indietro: '← Retour',
     continua: 'Continuer',
     salta: 'Passer',
