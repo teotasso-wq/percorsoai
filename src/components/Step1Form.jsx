@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { estraiTestoDaPdf } from '../lib/pdfReader';
 import { inferisciLivelloDaCv } from '../lib/aiClient';
+import { useLingua } from '../lib/LinguaContext';
 
 const AMBITI_SENSIBILI = ['elettric', 'clinic', 'medic', 'chirurg', 'idraulic', 'gas', 'saldatur', 'macchinari'];
 
 export default function Step1Form({ data, onNext }) {
+  const { t } = useLingua();
   const [form, setForm] = useState(data);
   const [approfondisci, setApprofondisci] = useState(false);
   const [caricandoCv, setCaricandoCv] = useState(false);
@@ -40,20 +42,18 @@ export default function Step1Form({ data, onNext }) {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
-  // Solo ambito e obiettivo sono davvero obbligatori: il resto ha valori
-  // di default sensati, così chi ha fretta può procedere subito.
   const puoiContinuare = form.ambito && form.obiettivo;
 
   return (
     <div>
-      <h1 className="font-display text-3xl md:text-4xl text-navy mb-2">Che cosa vuoi imparare?</h1>
-      <p className="text-ink/60 mb-8">Rispondi con parole tue, senza preoccuparti della forma.</p>
+      <h1 className="font-display text-3xl md:text-4xl text-navy mb-2">{t('step1_titolo')}</h1>
+      <p className="text-ink/60 mb-8">{t('step1_sottotitolo')}</p>
 
       <div className="space-y-6">
-        <Field label="Ambito o ruolo da imparare">
+        <Field label={t('step1_ambito')}>
           <input
             className="input"
-            placeholder="Es. Progettista meccanico, AI Strategist, Qlik..."
+            placeholder={t('step1_ambito_placeholder')}
             value={form.ambito}
             onChange={set('ambito')}
           />
@@ -61,16 +61,14 @@ export default function Step1Form({ data, onNext }) {
 
         {ambitoSensibile && (
           <div className="bg-dedotto/10 border border-dedotto/30 rounded-xl p-4 text-sm text-navy">
-            ⚠️ Questo ambito riguarda attività manuali, fisiche o regolamentate.
-            Il piano che riceverai non sostituisce pratica supervisionata,
-            certificazioni ufficiali o professionisti abilitati.
+            {t('step1_avviso_sensibile')}
           </div>
         )}
 
-        <Field label="Obiettivo operativo — cosa vuoi saper fare davvero">
+        <Field label={t('step1_obiettivo')}>
           <textarea
             className="input min-h-[90px]"
-            placeholder="Es. Voglio saper progettare organi macchina in autonomia"
+            placeholder={t('step1_obiettivo_placeholder')}
             value={form.obiettivo}
             onChange={set('obiettivo')}
           />
@@ -78,11 +76,9 @@ export default function Step1Form({ data, onNext }) {
 
         <div>
           <label className="block text-sm font-semibold text-navy mb-2">
-            Carica il tuo CV (facoltativo, PDF)
+            {t('step1_cv_label')}
           </label>
-          <p className="text-xs text-ink/50 mb-2">
-            Lo usiamo solo per capire il tuo livello di partenza reale — non viene salvato da nessuna parte.
-          </p>
+          <p className="text-xs text-ink/50 mb-2">{t('step1_cv_nota')}</p>
           <input
             type="file"
             accept="application/pdf"
@@ -90,9 +86,9 @@ export default function Step1Form({ data, onNext }) {
             disabled={caricandoCv}
             className="text-sm"
           />
-          {caricandoCv && <p className="text-xs text-navy/60 mt-2">Sto leggendo il CV...</p>}
+          {caricandoCv && <p className="text-xs text-navy/60 mt-2">{t('step1_cv_leggendo')}</p>}
           {notaCv && (
-            <p className="text-xs text-verificato mt-2">✓ Livello impostato su "{form.livello}": {notaCv}</p>
+            <p className="text-xs text-verificato mt-2">✓ {t('step1_cv_livello_impostato')} "{form.livello}": {notaCv}</p>
           )}
           {erroreCv && <p className="text-xs text-nonTrovata mt-2">{erroreCv}</p>}
         </div>
@@ -103,21 +99,21 @@ export default function Step1Form({ data, onNext }) {
             className="text-sm text-navy underline"
             onClick={() => setApprofondisci(true)}
           >
-            Approfondisci (consigliato, richiede 1 minuto in più)
+            {t('step1_approfondisci')}
           </button>
         )}
 
         {approfondisci && (
           <div className="space-y-6 border-t border-navy/10 pt-6">
-            <Field label="Livello di partenza">
+            <Field label={t('step1_livello')}>
               <select className="input" value={form.livello} onChange={set('livello')}>
-                <option value="principiante">Principiante</option>
-                <option value="intermedio">Intermedio</option>
-                <option value="avanzato">Avanzato</option>
+                <option value="principiante">{t('step1_livello_principiante')}</option>
+                <option value="intermedio">{t('step1_livello_intermedio')}</option>
+                <option value="avanzato">{t('step1_livello_avanzato')}</option>
               </select>
             </Field>
 
-            <Field label="Ore disponibili a settimana">
+            <Field label={t('step1_ore')}>
               <input
                 type="number"
                 min="1"
@@ -128,10 +124,10 @@ export default function Step1Form({ data, onNext }) {
               />
             </Field>
 
-            <Field label="Come saprai di aver raggiunto l'obiettivo?">
+            <Field label={t('step1_criterio')}>
               <textarea
                 className="input min-h-[90px]"
-                placeholder="Es. Saprò progettare un componente completo con calcoli e disegno"
+                placeholder={t('step1_criterio_placeholder')}
                 value={form.criterioSuccesso}
                 onChange={set('criterioSuccesso')}
               />
@@ -140,9 +136,7 @@ export default function Step1Form({ data, onNext }) {
         )}
 
         {!approfondisci && (
-          <p className="text-xs text-ink/40">
-            Se salti questa parte, useremo valori standard (principiante, 6 ore/settimana) — potrai sempre rigenerare il piano dopo.
-          </p>
+          <p className="text-xs text-ink/40">{t('step1_salta_nota')}</p>
         )}
       </div>
 
@@ -151,7 +145,7 @@ export default function Step1Form({ data, onNext }) {
         disabled={!puoiContinuare}
         onClick={() => onNext(form)}
       >
-        Continua
+        {t('continua')}
       </button>
     </div>
   );

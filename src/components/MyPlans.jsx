@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { suggerisciProssimoPiano } from '../lib/aiClient';
+import { useLingua } from '../lib/LinguaContext';
 
 export default function MyPlans({ onOpen, onNewPlan }) {
+  const { t } = useLingua();
   const [piani, setPiani] = useState(null);
   const [errore, setErrore] = useState(null);
   const [ricerca, setRicerca] = useState('');
@@ -33,7 +35,7 @@ export default function MyPlans({ onOpen, onNewPlan }) {
       const lista = completati.map((p) => p.form_data).filter(Boolean);
       suggerisciProssimoPiano(lista)
         .then(setSuggerimento)
-        .catch(() => {}); // suggerimento facoltativo, nessun errore mostrato
+        .catch(() => {});
     }
   }, [completati.length]);
 
@@ -52,7 +54,6 @@ export default function MyPlans({ onOpen, onNewPlan }) {
     await supabase.auth.signOut();
   };
 
-  // Statistiche semplici calcolate da quello che abbiamo già
   const totale = piani?.length || 0;
   const numCompletati = completati.length;
   const tassoCompletamento = totale > 0 ? Math.round((numCompletati / totale) * 100) : 0;
@@ -60,21 +61,21 @@ export default function MyPlans({ onOpen, onNewPlan }) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-3xl text-navy">I tuoi piani</h1>
-        <button className="btn-primary" onClick={() => onNewPlan()}>+ Nuovo piano</button>
+        <h1 className="font-display text-3xl text-navy">{t('piani_titolo')}</h1>
+        <button className="btn-primary" onClick={() => onNewPlan()}>{t('piani_nuovo')}</button>
       </div>
 
       {errore && (
         <div className="bg-nonTrovata/10 border border-nonTrovata/30 rounded-xl p-4 text-sm text-navy mb-6">
-          Non riesco a caricare i piani salvati: {errore}
+          {errore}
         </div>
       )}
 
       {totale > 0 && (
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <StatBox numero={totale} etichetta="Piani totali" />
-          <StatBox numero={numCompletati} etichetta="Completati" />
-          <StatBox numero={`${tassoCompletamento}%`} etichetta="Tasso completamento" />
+          <StatBox numero={totale} etichetta={t('piani_totali')} />
+          <StatBox numero={numCompletati} etichetta={t('piani_completati_stat')} />
+          <StatBox numero={`${tassoCompletamento}%`} etichetta={t('piani_tasso')} />
         </div>
       )}
 
@@ -83,7 +84,7 @@ export default function MyPlans({ onOpen, onNewPlan }) {
           onClick={() => onOpen(daRiprendere)}
           className="w-full text-left bg-navy text-paper rounded-2xl p-6 mb-8 hover:bg-navyDark transition-colors"
         >
-          <p className="text-xs uppercase tracking-wide opacity-70 mb-1">Riprendi da dove eri</p>
+          <p className="text-xs uppercase tracking-wide opacity-70 mb-1">{t('piani_riprendi')}</p>
           <h3 className="font-display text-xl mb-1">
             {daRiprendere.form_data?.ambito || 'Piano senza titolo'}
           </h3>
@@ -93,30 +94,30 @@ export default function MyPlans({ onOpen, onNewPlan }) {
 
       {suggerimento && suggerimento.ambito && (
         <div className="bg-dedotto/10 border border-dedotto/30 rounded-2xl p-6 mb-8">
-          <p className="text-xs uppercase tracking-wide text-navy/60 mb-1">Potrebbe interessarti</p>
+          <p className="text-xs uppercase tracking-wide text-navy/60 mb-1">{t('piani_suggerimento')}</p>
           <h3 className="font-display text-xl text-navy mb-1">{suggerimento.ambito}</h3>
           <p className="text-sm text-ink/70 mb-3">{suggerimento.motivazione}</p>
           <button
             className="btn-secondary text-sm"
             onClick={() => onNewPlan({ ambito: suggerimento.ambito, obiettivo: suggerimento.obiettivo })}
           >
-            Crea questo piano
+            {t('piani_crea_suggerito')}
           </button>
         </div>
       )}
 
       {totale === 0 && (
-        <p className="text-ink/60">Non hai ancora nessun piano salvato. Creane uno nuovo per iniziare.</p>
+        <p className="text-ink/60">{t('piani_vuoto')}</p>
       )}
 
       {completati.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-navy/60">Piani completati</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-navy/60">{t('piani_completati_titolo')}</h2>
           </div>
           <input
             className="input mb-4"
-            placeholder="Cerca tra i tuoi piani..."
+            placeholder={t('piani_cerca')}
             value={ricerca}
             onChange={(e) => setRicerca(e.target.value)}
           />
@@ -152,7 +153,7 @@ export default function MyPlans({ onOpen, onNewPlan }) {
               );
             })}
             {completatiFiltrati.length === 0 && (
-              <p className="text-sm text-ink/50">Nessun piano trovato per "{ricerca}".</p>
+              <p className="text-sm text-ink/50">{t('piani_nessun_risultato')} "{ricerca}".</p>
             )}
           </div>
         </div>
@@ -164,23 +165,21 @@ export default function MyPlans({ onOpen, onNewPlan }) {
             className="text-sm text-nonTrovata underline"
             onClick={() => setConfermaCancellazione(true)}
           >
-            Cancella tutti i miei dati
+            {t('piani_cancella_dati')}
           </button>
         ) : (
           <div className="bg-nonTrovata/10 border border-nonTrovata/30 rounded-xl p-4">
-            <p className="text-sm text-navy mb-3">
-              Questo cancella per sempre tutti i tuoi piani salvati e la tua streak. Non si può annullare. Sei sicuro?
-            </p>
+            <p className="text-sm text-navy mb-3">{t('piani_cancella_conferma')}</p>
             <div className="flex gap-3">
               <button className="btn-secondary text-sm" onClick={() => setConfermaCancellazione(false)}>
-                Annulla
+                {t('piani_annulla')}
               </button>
               <button
                 className="text-sm bg-nonTrovata text-white px-4 py-2 rounded-xl font-semibold"
                 onClick={eliminaTuttiIDati}
                 disabled={cancellando}
               >
-                {cancellando ? 'Cancellazione in corso...' : 'Sì, cancella tutto'}
+                {cancellando ? t('piani_cancellando') : t('piani_cancella_si')}
               </button>
             </div>
           </div>
@@ -199,8 +198,6 @@ function StatBox({ numero, etichetta }) {
   );
 }
 
-// Punteggio di fiducia = media dei KPI dell'audit, così si vede a
-// colpo d'occhio quali piani sono più solidi, senza dover riaprire ognuno.
 function calcolaPunteggioFiducia(auditData) {
   if (!auditData?.kpi) return null;
   const valori = Object.values(auditData.kpi);

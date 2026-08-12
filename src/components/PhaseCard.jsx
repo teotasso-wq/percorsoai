@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Badge from './Badge';
 import CopyButton from './CopyButton';
 import { generaSpiegazione, rigeneraFase } from '../lib/aiClient';
+import { useLingua } from '../lib/LinguaContext';
 
 function buildNotebookPrompts(phase, formData) {
   return [
@@ -29,6 +30,7 @@ function buildNotebookPrompts(phase, formData) {
 }
 
 export default function PhaseCard({ phase, formData, onAggiornaFase }) {
+  const { t } = useLingua();
   const [aperta, setAperta] = useState(false);
   const [spiegazione, setSpiegazione] = useState(null);
   const [caricandoSpiegazione, setCaricandoSpiegazione] = useState(false);
@@ -49,7 +51,7 @@ export default function PhaseCard({ phase, formData, onAggiornaFase }) {
     try {
       const nuovaFase = await rigeneraFase(formData, phase, direzione);
       onAggiornaFase(nuovaFase);
-      setSpiegazione(null); // la vecchia spiegazione non è più coerente
+      setSpiegazione(null);
     } catch (e) {
       // Errore silenzioso qui, gestito a livello di riprova manuale
     } finally {
@@ -80,7 +82,7 @@ export default function PhaseCard({ phase, formData, onAggiornaFase }) {
           <p className="text-ink">{phase.obiettivo}</p>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-2">Prerequisiti</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-2">{t('fase_prerequisiti')}</h4>
             <ul className="list-disc list-inside text-sm text-ink/80 space-y-1">
               {phase.prerequisiti.map((p, i) => (
                 <li key={i}>{p}</li>
@@ -89,17 +91,17 @@ export default function PhaseCard({ phase, formData, onAggiornaFase }) {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-2">Competenze chiave</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-2">{t('fase_competenze')}</h4>
             <div className="space-y-3">
               {phase.competenze.map((c, i) => (
                 <div key={i}>
                   <p className="text-sm text-ink mb-1">
                     {c.testo}{' '}
                     {c.tipo_memoria === 'memoria' && (
-                      <span className="text-xs text-navy/50" title="Da sapere a memoria">🧠</span>
+                      <span className="text-xs text-navy/50" title={t('fase_memoria')}>🧠</span>
                     )}
                     {c.tipo_memoria === 'consultabile' && (
-                      <span className="text-xs text-navy/50" title="Da consultare quando serve">📖</span>
+                      <span className="text-xs text-navy/50" title={t('fase_consultabile')}>📖</span>
                     )}
                   </p>
                   <Badge type={c.tag} />
@@ -108,51 +110,50 @@ export default function PhaseCard({ phase, formData, onAggiornaFase }) {
             </div>
           </div>
 
-          <InfoBox titolo="Criterio di completamento" testo={phase.criterio} />
-          <InfoBox titolo="Output per il portfolio" testo={phase.portfolio} />
+          <InfoBox titolo={t('fase_criterio')} testo={phase.criterio} />
+          <InfoBox titolo={t('fase_output')} testo={phase.portfolio} />
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-ink/50">Questa fase è:</span>
+            <span className="text-xs text-ink/50">{t('fase_domanda_difficolta')}</span>
             <button
               className="text-xs btn-secondary py-1.5 px-3 disabled:opacity-40"
               onClick={() => adattaDifficolta('troppo_facile')}
               disabled={rigenerando !== null}
             >
-              {rigenerando === 'troppo_facile' ? 'Adatto...' : 'Troppo facile'}
+              {rigenerando === 'troppo_facile' ? t('fase_adatto') : t('fase_troppo_facile')}
             </button>
             <button
               className="text-xs btn-secondary py-1.5 px-3 disabled:opacity-40"
               onClick={() => adattaDifficolta('troppo_difficile')}
               disabled={rigenerando !== null}
             >
-              {rigenerando === 'troppo_difficile' ? 'Adatto...' : 'Troppo difficile'}
+              {rigenerando === 'troppo_difficile' ? t('fase_adatto') : t('fase_troppo_difficile')}
             </button>
           </div>
 
-          {/* Spiegazione diretta — generata al primo click (lazy loading) */}
           <div>
             {!spiegazione && !caricandoSpiegazione && (
               <button className="btn-secondary text-sm" onClick={richiediSpiegazione}>
-                Mostra spiegazione della fase
+                {t('fase_mostra_spiegazione')}
               </button>
             )}
 
             {caricandoSpiegazione && (
-              <p className="text-sm text-navy/60">Sto scrivendo la spiegazione...</p>
+              <p className="text-sm text-navy/60">{t('fase_scrivendo_spiegazione')}</p>
             )}
 
             {erroreSpiegazione && (
               <div className="bg-nonTrovata/10 border border-nonTrovata/30 rounded-xl p-4 text-sm text-navy">
-                <p className="mb-2">Non sono riuscito a generarla: {erroreSpiegazione}</p>
+                <p className="mb-2">{t('fase_spiegazione_errore')} {erroreSpiegazione}</p>
                 <button className="btn-secondary text-sm" onClick={richiediSpiegazione}>
-                  Riprova
+                  {t('riprova')}
                 </button>
               </div>
             )}
 
             {spiegazione && (
               <div>
-                <h4 className="font-display text-lg text-navy mb-3">Spiegazione della fase</h4>
+                <h4 className="font-display text-lg text-navy mb-3">{t('fase_spiegazione_titolo')}</h4>
                 <div className="space-y-3">
                   {spiegazione.map((p, i) => (
                     <div key={i}>
@@ -166,7 +167,7 @@ export default function PhaseCard({ phase, formData, onAggiornaFase }) {
           </div>
 
           <div>
-            <h4 className="font-display text-lg text-navy mb-3">Prompt per NotebookLM</h4>
+            <h4 className="font-display text-lg text-navy mb-3">{t('fase_notebooklm_titolo')}</h4>
             <div className="space-y-3">
               {prompts.map((p, i) => (
                 <div key={i} className="bg-paper border border-navy/10 rounded-xl p-4">

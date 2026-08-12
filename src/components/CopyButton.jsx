@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useLingua } from '../lib/LinguaContext';
 
 export default function CopyButton({ text }) {
+  const { t } = useLingua();
   const [copiato, setCopiato] = useState(false);
 
   const copia = async () => {
@@ -18,7 +20,7 @@ export default function CopyButton({ text }) {
       onClick={copia}
       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-navy/20 text-navy hover:bg-navy hover:text-paper transition-colors"
     >
-      {copiato ? 'Copiato ✓' : 'Copia'}
+      {copiato ? t('copiato') : t('copia')}
     </button>
   );
 }

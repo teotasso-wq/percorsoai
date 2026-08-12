@@ -1,7 +1,10 @@
 import { DEMO_PHASES, DEMO_SOURCES, DEMO_AUDIT } from '../data/demoPlan';
+import { useLingua } from '../lib/LinguaContext';
 import Badge from './Badge';
 
 export default function DemoPreview({ onClose }) {
+  const { t } = useLingua();
+
   return (
     <div className="min-h-screen bg-paper">
       <header className="border-b border-navy/10 bg-white">
@@ -10,19 +13,19 @@ export default function DemoPreview({ onClose }) {
             <div className="w-8 h-8 rounded-full border-2 border-navy flex items-center justify-center text-navy font-display font-bold text-sm">
               P
             </div>
-            <span className="font-display text-xl text-navy">PercorsoAI</span>
+            <span className="font-display text-xl text-navy">{t('app_nome')}</span>
           </div>
-          <button className="btn-secondary text-sm" onClick={onClose}>Chiudi anteprima</button>
+          <button className="btn-secondary text-sm" onClick={onClose}>{t('demo_chiudi')}</button>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <div className="bg-dedotto/10 border border-dedotto/30 rounded-xl p-4 text-sm text-navy mb-8">
-          Questo è un esempio dimostrativo con dati finti, per farti vedere come funziona l'app prima di crearne uno tuo. Il piano vero viene generato con ricerca web reale.
+          {t('demo_avviso')}
         </div>
 
-        <h1 className="font-display text-3xl text-navy mb-2">Esempio: Progettista meccanico</h1>
-        <p className="text-ink/60 mb-8">Così appare un percorso completo, con fasi, fonti e audit finale.</p>
+        <h1 className="font-display text-3xl text-navy mb-2">{t('demo_titolo')}</h1>
+        <p className="text-ink/60 mb-8">{t('demo_sottotitolo')}</p>
 
         <div className="space-y-4 mb-10">
           {DEMO_PHASES.map((phase) => (
@@ -38,7 +41,7 @@ export default function DemoPreview({ onClose }) {
         </div>
 
         <div className="bg-white border border-navy/15 rounded-2xl p-6 mb-10">
-          <h2 className="font-display text-2xl text-navy mb-4">Fonti</h2>
+          <h2 className="font-display text-2xl text-navy mb-4">{t('demo_fonti')}</h2>
           <div className="flex gap-2 flex-wrap mb-4">
             <Badge type="verificato" />
             <Badge type="dedotto" />
@@ -50,13 +53,13 @@ export default function DemoPreview({ onClose }) {
         </div>
 
         <div className="bg-white border border-navy/15 rounded-2xl p-6 mb-10">
-          <h2 className="font-display text-2xl text-navy mb-3">Audit finale</h2>
-          <p className="text-sm text-ink/70 mb-2">Verdetto: <strong className="text-navy">{DEMO_AUDIT.verdetto}</strong></p>
-          <p className="text-sm text-ink/70">Rischio allucinazioni: {DEMO_AUDIT.rischio}</p>
+          <h2 className="font-display text-2xl text-navy mb-3">{t('demo_audit')}</h2>
+          <p className="text-sm text-ink/70 mb-2">{t('demo_verdetto')}: <strong className="text-navy">{DEMO_AUDIT.verdetto}</strong></p>
+          <p className="text-sm text-ink/70">{t('demo_rischio')}: {DEMO_AUDIT.rischio}</p>
         </div>
 
         <button className="btn-primary w-full" onClick={onClose}>
-          Crea il tuo piano vero →
+          {t('demo_crea_vero')}
         </button>
       </main>
     </div>

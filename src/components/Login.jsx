@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { useLingua } from '../lib/LinguaContext';
 import DemoPreview from './DemoPreview';
 
 export default function Login() {
+  const { t } = useLingua();
   const [email, setEmail] = useState('');
   const [inviato, setInviato] = useState(false);
   const [errore, setErrore] = useState(null);
@@ -36,23 +38,23 @@ export default function Login() {
           <div className="w-10 h-10 rounded-full border-2 border-navy flex items-center justify-center text-navy font-display font-bold mx-auto mb-3">
             P
           </div>
-          <h1 className="font-display text-2xl text-navy">PercorsoAI</h1>
+          <h1 className="font-display text-2xl text-navy">{t('app_nome')}</h1>
         </div>
 
         {inviato ? (
           <div className="bg-verificato/10 border border-verificato/30 rounded-xl p-5 text-sm text-navy text-center">
-            Ti abbiamo mandato un link via email. Aprilo dallo stesso telefono per accedere — puoi chiudere questa pagina.
+            {t('login_inviato')}
           </div>
         ) : (
           <form onSubmit={invia} className="space-y-4">
             <p className="text-sm text-ink/60 text-center mb-2">
-              Inserisci la tua email: ti mandiamo un link per accedere, senza password.
+              {t('login_titolo')}
             </p>
             <input
               type="email"
               required
               className="input"
-              placeholder="tuaemail@esempio.it"
+              placeholder={t('login_placeholder_email')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -60,7 +62,7 @@ export default function Login() {
               <p className="text-sm text-nonTrovata">{errore}</p>
             )}
             <button className="btn-primary w-full" disabled={invio}>
-              {invio ? 'Invio in corso...' : 'Invia link di accesso'}
+              {invio ? t('login_invio_corso') : t('login_invia')}
             </button>
           </form>
         )}
@@ -70,7 +72,7 @@ export default function Login() {
             className="w-full text-center text-sm text-navy/60 underline mt-4"
             onClick={() => setMostraDemo(true)}
           >
-            Guarda un esempio prima di iscriverti
+            {t('login_vedi_esempio')}
           </button>
         )}
       </div>

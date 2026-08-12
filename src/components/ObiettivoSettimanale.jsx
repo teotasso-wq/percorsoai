@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useLingua } from '../lib/LinguaContext';
 
 export default function ObiettivoSettimanale({ piano, onSalva }) {
+  const { t } = useLingua();
   const [modifica, setModifica] = useState(!piano.obiettivo_settimanale);
   const [testo, setTesto] = useState(piano.obiettivo_settimanale || '');
   const [scadenza, setScadenza] = useState(piano.obiettivo_settimanale_scadenza || '');
@@ -37,14 +39,14 @@ export default function ObiettivoSettimanale({ piano, onSalva }) {
   if (modifica) {
     return (
       <div className="bg-white border border-navy/15 rounded-2xl p-5 mb-8">
-        <h3 className="font-display text-lg text-navy mb-3">Obiettivo di questa settimana</h3>
+        <h3 className="font-display text-lg text-navy mb-3">{t('obiettivo_titolo')}</h3>
         <input
           className="input mb-3"
-          placeholder="Es. Finire la Fase 2"
+          placeholder={t('obiettivo_placeholder')}
           value={testo}
           onChange={(e) => setTesto(e.target.value)}
         />
-        <label className="block text-xs font-semibold text-navy/60 mb-1">Entro quando</label>
+        <label className="block text-xs font-semibold text-navy/60 mb-1">{t('obiettivo_entro_quando')}</label>
         <input
           type="date"
           className="input mb-4"
@@ -52,7 +54,7 @@ export default function ObiettivoSettimanale({ piano, onSalva }) {
           onChange={(e) => setScadenza(e.target.value)}
         />
         <button className="btn-primary text-sm" disabled={!testo || !scadenza} onClick={salva}>
-          Imposta obiettivo
+          {t('obiettivo_imposta')}
         </button>
       </div>
     );
@@ -66,11 +68,13 @@ export default function ObiettivoSettimanale({ piano, onSalva }) {
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-display text-lg text-navy">{piano.obiettivo_settimanale}</h3>
         <button className="text-xs text-navy/50 underline" onClick={() => setModifica(true)}>
-          Modifica
+          {t('modifica')}
         </button>
       </div>
       <p className="text-xs text-ink/50 mb-3">
-        {rimasti !== null && rimasti >= 0 ? `${rimasti} ${rimasti === 1 ? 'giorno rimasto' : 'giorni rimasti'}` : 'Scadenza superata'}
+        {rimasti !== null && rimasti >= 0
+          ? `${rimasti} ${rimasti === 1 ? t('obiettivo_giorno_rimasto') : t('obiettivo_giorni_rimasti')}`
+          : t('obiettivo_scaduto')}
       </p>
       <div className="h-2 bg-navy/10 rounded-full overflow-hidden">
         <div

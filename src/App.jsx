@@ -13,6 +13,7 @@ import Step3Plan from './components/Step3Plan';
 import Step4Audit from './components/Step4Audit';
 import PrintPianoCompleto from './components/PrintPianoCompleto';
 import PrintPortfolio from './components/PrintPortfolio';
+import { useLingua } from './lib/LinguaContext';
 
 const FORM_INIZIALE = {
   ambito: '',
@@ -23,6 +24,7 @@ const FORM_INIZIALE = {
 };
 
 export default function App() {
+  const { t } = useLingua();
   const [sessione, setSessione] = useState(undefined);
   const [vista, setVista] = useState('lista'); // lista | percorso | stampa-piano | stampa-portfolio
   const [step, setStep] = useState(1);
@@ -168,7 +170,7 @@ export default function App() {
             <div className="w-8 h-8 rounded-full border-2 border-navy flex items-center justify-center text-navy font-display font-bold text-sm">
               P
             </div>
-            <span className="font-display text-xl text-navy">PercorsoAI</span>
+            <span className="font-display text-xl text-navy">{t('app_nome')}</span>
           </button>
           <div className="flex items-center gap-4">
             {streak !== null && streak > 0 && (
@@ -181,7 +183,7 @@ export default function App() {
               Impostazioni
             </button>
             <button className="text-sm text-navy/60 underline" onClick={() => supabase.auth.signOut()}>
-              Esci
+              {t('esci')}
             </button>
           </div>
         </div>

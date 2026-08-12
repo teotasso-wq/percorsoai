@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { generaDurate } from '../lib/aiClient';
+import { useLingua } from '../lib/LinguaContext';
 
 export default function Step2Duration({ selected, formData, onNext, onBack }) {
+  const { t } = useLingua();
   const [durations, setDurations] = useState(null);
   const [errore, setErrore] = useState(null);
   const [caricando, setCaricando] = useState(true);
@@ -17,18 +19,16 @@ export default function Step2Duration({ selected, formData, onNext, onBack }) {
 
   return (
     <div>
-      <h1 className="font-display text-3xl md:text-4xl text-navy mb-2">Quanto tempo vuoi dedicarci?</h1>
-      <p className="text-ink/60 mb-8">
-        Tre proposte in base a quello che ci hai detto. Scegline una — potrai sempre rigenerare il piano.
-      </p>
+      <h1 className="font-display text-3xl md:text-4xl text-navy mb-2">{t('step2_titolo')}</h1>
+      <p className="text-ink/60 mb-8">{t('step2_sottotitolo')}</p>
 
       {caricando && (
-        <div className="text-navy/60 text-sm py-8">Sto calcolando le proposte di durata...</div>
+        <div className="text-navy/60 text-sm py-8">{t('step2_caricamento')}</div>
       )}
 
       {errore && (
         <div className="bg-nonTrovata/10 border border-nonTrovata/30 rounded-xl p-4 text-sm text-navy mb-6">
-          Non sono riuscito a generare le proposte: {errore}
+          {t('step2_errore')} {errore}
         </div>
       )}
 
@@ -51,7 +51,7 @@ export default function Step2Duration({ selected, formData, onNext, onBack }) {
       )}
 
       <button className="btn-secondary mt-10" onClick={onBack}>
-        ← Indietro
+        {t('indietro')}
       </button>
     </div>
   );
