@@ -29,19 +29,32 @@ function buildNotebookPrompts(phase, formData) {
   ];
 }
 
-export default function PhaseCard({ phase, formData, onAggiornaFase }) {
+export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvato, onSalvaSpiegazione }) {
   const { t } = useLingua();
   const [aperta, setAperta] = useState(false);
-  const [spiegazione, setSpiegazione] = useState(null);
+  const [spiegazione, setSpiegazione] = useState(
+    pianoSalvato?.spiegazioni?.[phase.id] || null
+  );
   const [caricandoSpiegazione, setCaricandoSpiegazione] = useState(false);
   const [erroreSpiegazione, setErroreSpiegazione] = useState(null);
   const [rigenerando, setRigenerando] = useState(null);
 
   const richiediSpiegazione = () => {
+    // Ottimizzazione 5: se questa fase ha già una spiegazione salvata
+    // nel database, non richiamare l'AI — costo zero, stessa qualità.
+    const salvata = pianoSalvato?.spiegazioni?.[phase.id];
+    if (salvata) {
+      setSpiegazione(salvata);
+      return;
+    }
     setCaricandoSpiegazione(true);
     setErroreSpiegazione(null);
     generaSpiegazione(formData, phase)
-      .then((data) => setSpiegazione(data.paragrafi || []))
+      .then((data) => {
+        const paragrafi = data.paragrafi || [];
+        setSpiegazione(paragrafi);
+        onSalvaSpiegazione?.(phase.id, paragrafi);
+      })
       .catch((e) => setErroreSpiegazione(e.message))
       .finally(() => setCaricandoSpiegazione(false));
   };

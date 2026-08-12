@@ -31,13 +31,40 @@ export default function MyPlans({ onOpen, onNewPlan }) {
   const completati = piani?.filter((p) => p.status === 'completato') || [];
 
   useEffect(() => {
-    if (completati.length > 0 && !suggerimento) {
-      const lista = completati.map((p) => p.form_data).filter(Boolean);
-      suggerisciProssimoPiano(lista)
-        .then(setSuggerimento)
-        .catch(() => {});
-    }
+    if (completati.length === 0) return;
+    caricaSuggerimento();
   }, [completati.length]);
+
+  const caricaSuggerimento = async () => {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return;
+
+    const { data: profilo } = await supabase
+      .from('profili')
+      .select('suggerimento_json, suggerimento_basato_su')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    // Ottimizzazione 3: se il numero di piani completati non è cambiato
+    // da quando abbiamo generato l'ultimo suggerimento, usa quello
+    // salvato invece di richiamare l'AI ad ogni apertura della home.
+    if (profilo?.suggerimento_json && profilo.suggerimento_basato_su === completati.length) {
+      setSuggerimento(profilo.suggerimento_json);
+      return;
+    }
+
+    const lista = completati.map((p) => p.form_data).filter(Boolean);
+    try {
+      const nuovoSuggerimento = await suggerisciProssimoPiano(lista);
+      setSuggerimento(nuovoSuggerimento);
+      await supabase
+        .from('profili')
+        .update({ suggerimento_json: nuovoSuggerimento, suggerimento_basato_su: completati.length })
+        .eq('user_id', userId);
+    } catch {
+      // suggerimento facoltativo, nessun errore mostrato
+    }
+  };
 
   const completatiFiltrati = ricerca
     ? completati.filter((p) => {

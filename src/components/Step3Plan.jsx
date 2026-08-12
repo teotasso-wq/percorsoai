@@ -41,12 +41,26 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
   };
 
   const traduci = async (linguaScelta) => {
+    // Ottimizzazione 7: se sei già in questa lingua, non fare nulla.
+    if (linguaScelta.codice === lingua) return;
+
+    // Ottimizzazione 8: se questa lingua è già stata tradotta prima,
+    // usa la versione salvata invece di richiamare l'AI.
+    const traduzioneSalvata = pianoSalvato?.traduzioni?.[linguaScelta.codice];
+    if (traduzioneSalvata) {
+      onPlanReady(traduzioneSalvata);
+      setLingua(linguaScelta.codice);
+      return;
+    }
+
     setTraducendo(true);
     try {
       const piano = { sources: planData.sources, phases: planData.phases };
       const tradotto = await traduciPiano(piano, linguaScelta.linguaAI);
       onPlanReady(tradotto);
-      setLingua(linguaScelta.codice); // cambia anche la lingua di tutta l'interfaccia
+      setLingua(linguaScelta.codice);
+      const nuoveTraduzioni = { ...(pianoSalvato?.traduzioni || {}), [linguaScelta.codice]: tradotto };
+      onSalvaObiettivo({ traduzioni: nuoveTraduzioni });
     } catch (e) {
       setErrore('Non sono riuscito a tradurre il piano: ' + e.message);
     } finally {
@@ -131,6 +145,11 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
                 key={phase.id}
                 phase={phase}
                 formData={formData}
+                pianoSalvato={pianoSalvato}
+                onSalvaSpiegazione={(faseId, paragrafi) => {
+                  const nuoveSpiegazioni = { ...(pianoSalvato?.spiegazioni || {}), [faseId]: paragrafi };
+                  onSalvaObiettivo({ spiegazioni: nuoveSpiegazioni });
+                }}
                 onAggiornaFase={(nuovaFase) => {
                   const nuoveFasi = [...planData.phases];
                   nuoveFasi[indice] = nuovaFase;
