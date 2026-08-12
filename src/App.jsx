@@ -31,6 +31,7 @@ export default function App() {
   const [planData, setPlanData] = useState(null);
   const [auditData, setAuditData] = useState(null);
   const [pianoIdCorrente, setPianoIdCorrente] = useState(null);
+  const [pianoSalvato, setPianoSalvato] = useState(null);
   const [streak, setStreak] = useState(null);
   const [mostraTutorial, setMostraTutorial] = useState(false);
 
@@ -66,6 +67,7 @@ export default function App() {
     setPlanData(null);
     setAuditData(null);
     setPianoIdCorrente(null);
+    setPianoSalvato(null);
     setStep(1);
     setVista('percorso');
   };
@@ -76,6 +78,7 @@ export default function App() {
     setPlanData(p.plan_data);
     setAuditData(p.audit_data);
     setPianoIdCorrente(p.id);
+    setPianoSalvato(p);
     // Riprende dal punto giusto in base a cosa è già stato generato
     if (p.audit_data) setStep(4);
     else if (p.plan_data) setStep(3);
@@ -96,11 +99,21 @@ export default function App() {
       ...campi,
     };
     if (pianoIdCorrente) {
-      await supabase.from('piani').update(riga).eq('id', pianoIdCorrente);
+      const { data } = await supabase.from('piani').update(riga).eq('id', pianoIdCorrente).select().single();
+      if (data) setPianoSalvato(data);
     } else {
       const { data } = await supabase.from('piani').insert(riga).select().single();
-      if (data) setPianoIdCorrente(data.id);
+      if (data) {
+        setPianoIdCorrente(data.id);
+        setPianoSalvato(data);
+      }
     }
+  };
+
+  const salvaObiettivoSettimanale = async (campi) => {
+    if (!pianoIdCorrente) return;
+    const { data } = await supabase.from('piani').update(campi).eq('id', pianoIdCorrente).select().single();
+    if (data) setPianoSalvato(data);
   };
 
   if (sessione === undefined) {
@@ -206,6 +219,8 @@ export default function App() {
               formData={formData}
               duration={durata}
               planData={planData}
+              pianoSalvato={pianoSalvato}
+              onSalvaObiettivo={salvaObiettivoSettimanale}
               onPlanReady={async (data) => {
                 setPlanData(data);
                 await salvaProgresso({ duration_data: durata, plan_data: data }, 'bozza');

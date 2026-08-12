@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import PhaseCard from './PhaseCard';
 import Badge from './Badge';
+import ObiettivoSettimanale from './ObiettivoSettimanale';
 import { generaPiano } from '../lib/aiClient';
 
-export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData }) {
+export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData, pianoSalvato, onSalvaObiettivo }) {
   const [caricando, setCaricando] = useState(!planData);
   const [errore, setErrore] = useState(null);
   const [tentativo, setTentativo] = useState(0);
@@ -24,6 +25,10 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
       <p className="text-ink/60 mb-8">
         Ogni fase mostra obiettivo, prerequisiti, competenze e i materiali per studiare.
       </p>
+
+      {planData && pianoSalvato && (
+        <ObiettivoSettimanale piano={pianoSalvato} onSalva={onSalvaObiettivo} />
+      )}
 
       {caricando && (
         <div className="text-navy/60 text-sm py-8">
