@@ -9,12 +9,15 @@ export default function MyPlans({ onOpen, onNewPlan }) {
     supabase
       .from('piani')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) setErrore(error.message);
         else setPiani(data);
       });
   }, []);
+
+  const daRiprendere = piani?.find((p) => p.status !== 'completato');
+  const completati = piani?.filter((p) => p.status === 'completato') || [];
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
@@ -29,13 +32,27 @@ export default function MyPlans({ onOpen, onNewPlan }) {
         </div>
       )}
 
+      {daRiprendere && (
+        <button
+          onClick={() => onOpen(daRiprendere)}
+          className="w-full text-left bg-navy text-paper rounded-2xl p-6 mb-8 hover:bg-navyDark transition-colors"
+        >
+          <p className="text-xs uppercase tracking-wide opacity-70 mb-1">Riprendi da dove eri</p>
+          <h3 className="font-display text-xl mb-1">
+            {daRiprendere.form_data?.ambito || 'Piano senza titolo'}
+          </h3>
+          <p className="text-sm opacity-80">{daRiprendere.form_data?.obiettivo}</p>
+        </button>
+      )}
+
       {piani && piani.length === 0 && (
         <p className="text-ink/60">Non hai ancora nessun piano salvato. Creane uno nuovo per iniziare.</p>
       )}
 
-      {piani && piani.length > 0 && (
+      {completati.length > 0 && (
         <div className="space-y-3">
-          {piani.map((p) => (
+          <h2 className="text-sm font-bold uppercase tracking-wide text-navy/60">Piani completati</h2>
+          {completati.map((p) => (
             <button
               key={p.id}
               onClick={() => onOpen(p)}
@@ -46,7 +63,7 @@ export default function MyPlans({ onOpen, onNewPlan }) {
               </h3>
               <p className="text-sm text-ink/60 mb-2">{p.form_data?.obiettivo}</p>
               <div className="flex items-center gap-3 text-xs text-navy/50">
-                <span>{new Date(p.created_at).toLocaleDateString('it-IT')}</span>
+                <span>{new Date(p.updated_at || p.created_at).toLocaleDateString('it-IT')}</span>
                 {p.audit_data?.verdetto && <span>· {p.audit_data.verdetto}</span>}
               </div>
             </button>

@@ -7,7 +7,7 @@ const RISCHIO_COLORE = {
   Alto: 'bg-nonTrovata/10 text-nonTrovata',
 };
 
-export default function Step4Audit({ formData, planData, auditDataIniziale, onAuditReady, onBack }) {
+export default function Step4Audit({ formData, planData, auditDataIniziale, onAuditReady, onBack, onExportPiano, onExportPortfolio }) {
   const [audit, setAudit] = useState(auditDataIniziale);
   const [errore, setErrore] = useState(null);
   const [caricando, setCaricando] = useState(!auditDataIniziale);
@@ -77,6 +77,10 @@ export default function Step4Audit({ formData, planData, auditDataIniziale, onAu
               <h3 className="text-sm font-bold uppercase tracking-wide text-navy/60 mb-3">Verdetto finale</h3>
               <p className="font-display text-2xl text-navy">{audit.verdetto}</p>
             </div>
+          </div>
+          <div className="flex flex-wrap gap-3 mb-10">
+            <button className="btn-secondary" onClick={onExportPortfolio}>Esporta Portfolio (PDF)</button>
+            <button className="btn-primary" onClick={onExportPiano}>Esporta Piano completo (PDF)</button>
           </div>
         </>
       )}

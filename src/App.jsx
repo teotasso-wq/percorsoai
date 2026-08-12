@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient';
+import { aggiornaStreak } from './lib/streak';
 import Login from './components/Login';
 import MyPlans from './components/MyPlans';
 import Stepper from './components/Stepper';
@@ -7,6 +8,8 @@ import Step1Form from './components/Step1Form';
 import Step2Duration from './components/Step2Duration';
 import Step3Plan from './components/Step3Plan';
 import Step4Audit from './components/Step4Audit';
+import PrintPianoCompleto from './components/PrintPianoCompleto';
+import PrintPortfolio from './components/PrintPortfolio';
 
 const FORM_INIZIALE = {
   ambito: '',
@@ -17,14 +20,15 @@ const FORM_INIZIALE = {
 };
 
 export default function App() {
-  const [sessione, setSessione] = useState(undefined); // undefined = ancora in caricamento
-  const [vista, setVista] = useState('lista'); // 'lista' | 'percorso'
+  const [sessione, setSessione] = useState(undefined);
+  const [vista, setVista] = useState('lista'); // lista | percorso | stampa-piano | stampa-portfolio
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(FORM_INIZIALE);
   const [durata, setDurata] = useState(null);
   const [planData, setPlanData] = useState(null);
   const [auditData, setAuditData] = useState(null);
   const [pianoIdCorrente, setPianoIdCorrente] = useState(null);
+  const [streak, setStreak] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessione(data.session));
@@ -34,7 +38,14 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const iniziaNuovoPiano = () => {
+  useEffect(() => {
+    if (sessione?.user?.id) {
+      aggiornaStreak(sessione.user.id).then(setStreak);
+    }
+  }, [sessione?.user?.id]);
+
+  const iniziaNuovoPiano = async () => {
+    const userId = sessione?.user?.id;
     setFormData(FORM_INIZIALE);
     setDurata(null);
     setPlanData(null);
@@ -50,19 +61,24 @@ export default function App() {
     setPlanData(p.plan_data);
     setAuditData(p.audit_data);
     setPianoIdCorrente(p.id);
-    setStep(4);
+    // Riprende dal punto giusto in base a cosa è già stato generato
+    if (p.audit_data) setStep(4);
+    else if (p.plan_data) setStep(3);
+    else if (p.duration_data) setStep(2);
+    else setStep(1);
     setVista('percorso');
   };
 
-  const salvaPiano = async (audit) => {
+  // Salva/aggiorna il piano nel database ad ogni passo, non solo alla fine.
+  const salvaProgresso = async (campi, status) => {
     const userId = sessione?.user?.id;
     if (!userId) return;
     const riga = {
       user_id: userId,
       form_data: formData,
-      duration_data: durata,
-      plan_data: planData,
-      audit_data: audit,
+      updated_at: new Date().toISOString(),
+      status,
+      ...campi,
     };
     if (pianoIdCorrente) {
       await supabase.from('piani').update(riga).eq('id', pianoIdCorrente);
@@ -73,11 +89,33 @@ export default function App() {
   };
 
   if (sessione === undefined) {
-    return <div className="min-h-screen bg-paper" />; // caricamento silenzioso
+    return <div className="min-h-screen bg-paper" />;
   }
 
   if (!sessione) {
     return <Login />;
+  }
+
+  if (vista === 'stampa-piano') {
+    return (
+      <PrintPianoCompleto
+        formData={formData}
+        durata={durata}
+        planData={planData}
+        auditData={auditData}
+        onClose={() => setVista('percorso')}
+      />
+    );
+  }
+
+  if (vista === 'stampa-portfolio') {
+    return (
+      <PrintPortfolio
+        formData={formData}
+        planData={planData}
+        onClose={() => setVista('percorso')}
+      />
+    );
   }
 
   return (
@@ -90,12 +128,14 @@ export default function App() {
             </div>
             <span className="font-display text-xl text-navy">PercorsoAI</span>
           </button>
-          <button
-            className="text-sm text-navy/60 underline"
-            onClick={() => supabase.auth.signOut()}
-          >
-            Esci
-          </button>
+          <div className="flex items-center gap-4">
+            {streak !== null && streak > 0 && (
+              <span className="text-sm font-semibold text-dedotto">🔥 {streak} {streak === 1 ? 'giorno' : 'giorni'}</span>
+            )}
+            <button className="text-sm text-navy/60 underline" onClick={() => supabase.auth.signOut()}>
+              Esci
+            </button>
+          </div>
         </div>
       </header>
 
@@ -110,7 +150,7 @@ export default function App() {
           {step === 1 && (
             <Step1Form
               data={formData}
-              onNext={(data) => {
+              onNext={async (data) => {
                 setFormData(data);
                 setStep(2);
               }}
@@ -121,9 +161,10 @@ export default function App() {
             <Step2Duration
               selected={durata}
               formData={formData}
-              onNext={(d) => {
+              onNext={async (d) => {
                 setDurata(d);
                 setPlanData(null);
+                await salvaProgresso({ duration_data: d }, 'bozza');
                 setStep(3);
               }}
               onBack={() => setStep(1)}
@@ -135,7 +176,10 @@ export default function App() {
               formData={formData}
               duration={durata}
               planData={planData}
-              onPlanReady={setPlanData}
+              onPlanReady={async (data) => {
+                setPlanData(data);
+                await salvaProgresso({ duration_data: durata, plan_data: data }, 'bozza');
+              }}
               onNext={() => setStep(4)}
               onBack={() => setStep(2)}
             />
@@ -146,11 +190,16 @@ export default function App() {
               formData={formData}
               planData={planData}
               auditDataIniziale={auditData}
-              onAuditReady={(audit) => {
+              onAuditReady={async (audit) => {
                 setAuditData(audit);
-                salvaPiano(audit);
+                await salvaProgresso(
+                  { duration_data: durata, plan_data: planData, audit_data: audit },
+                  'completato'
+                );
               }}
               onBack={() => setStep(3)}
+              onExportPiano={() => setVista('stampa-piano')}
+              onExportPortfolio={() => setVista('stampa-portfolio')}
             />
           )}
         </main>
