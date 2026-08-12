@@ -2,12 +2,35 @@ import { useEffect, useState } from 'react';
 import PhaseCard from './PhaseCard';
 import Badge from './Badge';
 import ObiettivoSettimanale from './ObiettivoSettimanale';
-import { generaPiano } from '../lib/aiClient';
+import { generaPiano, rigeneraFonte } from '../lib/aiClient';
 
-export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData, pianoSalvato, onSalvaObiettivo }) {
+export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData, pianoSalvato, onSalvaObiettivo, onSegnala }) {
   const [caricando, setCaricando] = useState(!planData);
   const [errore, setErrore] = useState(null);
   const [tentativo, setTentativo] = useState(0);
+  const [rigenerandoIndice, setRigenerandoIndice] = useState(null);
+
+  const rigenera = async (indice) => {
+    setRigenerandoIndice(indice);
+    try {
+      const nuovaFonte = await rigeneraFonte(formData, planData.sources[indice]);
+      const nuoveFonti = [...planData.sources];
+      nuoveFonti[indice] = nuovaFonte;
+      onPlanReady({ ...planData, sources: nuoveFonti });
+    } catch (e) {
+      setErrore('Non sono riuscito a trovare una fonte alternativa: ' + e.message);
+    } finally {
+      setRigenerandoIndice(null);
+    }
+  };
+
+  const segnala = (indice) => {
+    onSegnala({
+      tipo: 'fonte',
+      riferimento: planData.sources[indice].title,
+      data: new Date().toISOString(),
+    });
+  };
 
   useEffect(() => {
     if (planData) return;
@@ -72,7 +95,8 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
                     <th className="py-2 pr-4">Titolo</th>
                     <th className="py-2 pr-4">Tipo</th>
                     <th className="py-2 pr-4">Affidabilità</th>
-                    <th className="py-2">Link</th>
+                    <th className="py-2 pr-4">Link</th>
+                    <th className="py-2">Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,12 +105,26 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
                       <td className="py-3 pr-4">{s.title}</td>
                       <td className="py-3 pr-4 text-ink/60">{s.tipo}</td>
                       <td className="py-3 pr-4">{s.affidabilita}</td>
-                      <td className="py-3">
+                      <td className="py-3 pr-4">
                         {s.url && s.url !== '#' ? (
                           <a href={s.url} target="_blank" rel="noreferrer" className="text-navy underline">Apri</a>
                         ) : (
                           <span className="text-ink/40">—</span>
                         )}
+                      </td>
+                      <td className="py-3">
+                        <div className="flex gap-2 items-center">
+                          <button
+                            className="text-xs text-navy underline disabled:opacity-40"
+                            onClick={() => rigenera(i)}
+                            disabled={rigenerandoIndice === i}
+                          >
+                            {rigenerandoIndice === i ? 'Cerco...' : 'Rigenera'}
+                          </button>
+                          <button className="text-xs text-nonTrovata underline" onClick={() => segnala(i)}>
+                            Segnala
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

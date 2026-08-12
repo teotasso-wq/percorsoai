@@ -116,6 +116,19 @@ export default function App() {
     if (data) setPianoSalvato(data);
   };
 
+  const salvaSegnalazione = async (segnalazione) => {
+    if (!pianoIdCorrente) return;
+    const segnalazioniAttuali = pianoSalvato?.segnalazioni || [];
+    const nuoveSegnalazioni = [...segnalazioniAttuali, segnalazione];
+    const { data } = await supabase
+      .from('piani')
+      .update({ segnalazioni: nuoveSegnalazioni })
+      .eq('id', pianoIdCorrente)
+      .select()
+      .single();
+    if (data) setPianoSalvato(data);
+  };
+
   if (sessione === undefined) {
     return <div className="min-h-screen bg-paper" />;
   }
@@ -221,6 +234,7 @@ export default function App() {
               planData={planData}
               pianoSalvato={pianoSalvato}
               onSalvaObiettivo={salvaObiettivoSettimanale}
+              onSegnala={salvaSegnalazione}
               onPlanReady={async (data) => {
                 setPlanData(data);
                 await salvaProgresso({ duration_data: durata, plan_data: data }, 'bozza');

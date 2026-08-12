@@ -96,22 +96,36 @@ export default function MyPlans({ onOpen, onNewPlan }) {
             onChange={(e) => setRicerca(e.target.value)}
           />
           <div className="space-y-3">
-            {completatiFiltrati.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => onOpen(p)}
-                className="w-full text-left bg-white border border-navy/15 rounded-2xl p-5 hover:border-navy transition-colors"
-              >
-                <h3 className="font-display text-xl text-navy mb-1">
-                  {p.form_data?.ambito || 'Piano senza titolo'}
-                </h3>
-                <p className="text-sm text-ink/60 mb-2">{p.form_data?.obiettivo}</p>
-                <div className="flex items-center gap-3 text-xs text-navy/50">
-                  <span>{new Date(p.updated_at || p.created_at).toLocaleDateString('it-IT')}</span>
-                  {p.audit_data?.verdetto && <span>· {p.audit_data.verdetto}</span>}
-                </div>
-              </button>
-            ))}
+            {completatiFiltrati.map((p) => {
+              const punteggio = calcolaPunteggioFiducia(p.audit_data);
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => onOpen(p)}
+                  className="w-full text-left bg-white border border-navy/15 rounded-2xl p-5 hover:border-navy transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-display text-xl text-navy mb-1">
+                        {p.form_data?.ambito || 'Piano senza titolo'}
+                      </h3>
+                      <p className="text-sm text-ink/60 mb-2">{p.form_data?.obiettivo}</p>
+                      <div className="flex items-center gap-3 text-xs text-navy/50">
+                        <span>{new Date(p.updated_at || p.created_at).toLocaleDateString('it-IT')}</span>
+                        {p.audit_data?.verdetto && <span>· {p.audit_data.verdetto}</span>}
+                      </div>
+                    </div>
+                    {punteggio !== null && (
+                      <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold ${
+                        punteggio >= 85 ? 'bg-verificato/10 text-verificato' : punteggio >= 60 ? 'bg-dedotto/10 text-dedotto' : 'bg-nonTrovata/10 text-nonTrovata'
+                      }`}>
+                        {punteggio}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
             {completatiFiltrati.length === 0 && (
               <p className="text-sm text-ink/50">Nessun piano trovato per "{ricerca}".</p>
             )}
@@ -158,4 +172,14 @@ function StatBox({ numero, etichetta }) {
       <p className="text-xs text-ink/50 mt-1">{etichetta}</p>
     </div>
   );
+}
+
+// Punteggio di fiducia = media dei KPI dell'audit, così si vede a
+// colpo d'occhio quali piani sono più solidi, senza dover riaprire ognuno.
+function calcolaPunteggioFiducia(auditData) {
+  if (!auditData?.kpi) return null;
+  const valori = Object.values(auditData.kpi);
+  if (valori.length === 0) return null;
+  const somma = valori.reduce((acc, v) => acc + v, 0);
+  return Math.round(somma / valori.length);
 }

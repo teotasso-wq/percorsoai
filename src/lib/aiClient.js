@@ -38,3 +38,7 @@ export function generaAudit(formData, planData) {
 export function generaSpiegazione(formData, phase) {
   return chiamaFunzione({ stage: 'explanation', formData, duration: phase });
 }
+
+export function rigeneraFonte(formData, fonte) {
+  return chiamaFunzione({ stage: 'regenera_fonte', formData, duration: fonte });
+}
