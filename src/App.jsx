@@ -4,6 +4,8 @@ import { aggiornaStreak } from './lib/streak';
 import Login from './components/Login';
 import MyPlans from './components/MyPlans';
 import Tutorial from './components/Tutorial';
+import Stats from './components/Stats';
+import Settings from './components/Settings';
 import Stepper from './components/Stepper';
 import Step1Form from './components/Step1Form';
 import Step2Duration from './components/Step2Duration';
@@ -146,6 +148,12 @@ export default function App() {
             {streak !== null && streak > 0 && (
               <span className="text-sm font-semibold text-dedotto">🔥 {streak} {streak === 1 ? 'giorno' : 'giorni'}</span>
             )}
+            <button className="text-sm text-navy/60 underline" onClick={() => setVista('statistiche')}>
+              Statistiche
+            </button>
+            <button className="text-sm text-navy/60 underline" onClick={() => setVista('impostazioni')}>
+              Impostazioni
+            </button>
             <button className="text-sm text-navy/60 underline" onClick={() => supabase.auth.signOut()}>
               Esci
             </button>
@@ -155,6 +163,14 @@ export default function App() {
 
       {vista === 'lista' && (
         <MyPlans onOpen={apriPianoSalvato} onNewPlan={iniziaNuovoPiano} />
+      )}
+
+      {vista === 'statistiche' && (
+        <Stats onClose={() => setVista('lista')} />
+      )}
+
+      {vista === 'impostazioni' && (
+        <Settings onClose={() => setVista('lista')} />
       )}
 
       {vista === 'percorso' && (
