@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import DemoPreview from './DemoPreview';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [inviato, setInviato] = useState(false);
   const [errore, setErrore] = useState(null);
   const [invio, setInvio] = useState(false);
+  const [mostraDemo, setMostraDemo] = useState(false);
+
+  if (mostraDemo) {
+    return <DemoPreview onClose={() => setMostraDemo(false)} />;
+  }
 
   const invia = async (e) => {
     e.preventDefault();
@@ -57,6 +63,15 @@ export default function Login() {
               {invio ? 'Invio in corso...' : 'Invia link di accesso'}
             </button>
           </form>
+        )}
+
+        {!inviato && (
+          <button
+            className="w-full text-center text-sm text-navy/60 underline mt-4"
+            onClick={() => setMostraDemo(true)}
+          >
+            Guarda un esempio prima di iscriverti
+          </button>
         )}
       </div>
     </div>

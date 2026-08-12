@@ -3,6 +3,7 @@ import { supabase } from './lib/supabaseClient';
 import { aggiornaStreak } from './lib/streak';
 import Login from './components/Login';
 import MyPlans from './components/MyPlans';
+import Tutorial from './components/Tutorial';
 import Stepper from './components/Stepper';
 import Step1Form from './components/Step1Form';
 import Step2Duration from './components/Step2Duration';
@@ -29,6 +30,18 @@ export default function App() {
   const [auditData, setAuditData] = useState(null);
   const [pianoIdCorrente, setPianoIdCorrente] = useState(null);
   const [streak, setStreak] = useState(null);
+  const [mostraTutorial, setMostraTutorial] = useState(false);
+
+  useEffect(() => {
+    if (sessione && !localStorage.getItem('percorsoai_tutorial_visto')) {
+      setMostraTutorial(true);
+    }
+  }, [sessione]);
+
+  const chiudiTutorial = () => {
+    localStorage.setItem('percorsoai_tutorial_visto', '1');
+    setMostraTutorial(false);
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessione(data.session));
@@ -120,6 +133,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-paper">
+      {mostraTutorial && <Tutorial onClose={chiudiTutorial} />}
       <header className="border-b border-navy/10 bg-white">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
           <button className="flex items-center gap-3" onClick={() => setVista('lista')}>

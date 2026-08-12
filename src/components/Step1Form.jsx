@@ -4,6 +4,7 @@ const AMBITI_SENSIBILI = ['elettric', 'clinic', 'medic', 'chirurg', 'idraulic', 
 
 export default function Step1Form({ data, onNext }) {
   const [form, setForm] = useState(data);
+  const [approfondisci, setApprofondisci] = useState(false);
 
   const ambitoSensibile = AMBITI_SENSIBILI.some((k) =>
     form.ambito.toLowerCase().includes(k)
@@ -11,7 +12,9 @@ export default function Step1Form({ data, onNext }) {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
-  const puoiContinuare = form.ambito && form.obiettivo && form.criterioSuccesso && form.oreSettimanali;
+  // Solo ambito e obiettivo sono davvero obbligatori: il resto ha valori
+  // di default sensati, così chi ha fretta può procedere subito.
+  const puoiContinuare = form.ambito && form.obiettivo;
 
   return (
     <div>
@@ -45,33 +48,53 @@ export default function Step1Form({ data, onNext }) {
           />
         </Field>
 
-        <Field label="Livello di partenza">
-          <select className="input" value={form.livello} onChange={set('livello')}>
-            <option value="principiante">Principiante</option>
-            <option value="intermedio">Intermedio</option>
-            <option value="avanzato">Avanzato</option>
-          </select>
-        </Field>
+        {!approfondisci && (
+          <button
+            type="button"
+            className="text-sm text-navy underline"
+            onClick={() => setApprofondisci(true)}
+          >
+            Approfondisci (consigliato, richiede 1 minuto in più)
+          </button>
+        )}
 
-        <Field label="Ore disponibili a settimana">
-          <input
-            type="number"
-            min="1"
-            max="40"
-            className="input"
-            value={form.oreSettimanali}
-            onChange={set('oreSettimanali')}
-          />
-        </Field>
+        {approfondisci && (
+          <div className="space-y-6 border-t border-navy/10 pt-6">
+            <Field label="Livello di partenza">
+              <select className="input" value={form.livello} onChange={set('livello')}>
+                <option value="principiante">Principiante</option>
+                <option value="intermedio">Intermedio</option>
+                <option value="avanzato">Avanzato</option>
+              </select>
+            </Field>
 
-        <Field label="Come saprai di aver raggiunto l'obiettivo?">
-          <textarea
-            className="input min-h-[90px]"
-            placeholder="Es. Saprò progettare un componente completo con calcoli e disegno"
-            value={form.criterioSuccesso}
-            onChange={set('criterioSuccesso')}
-          />
-        </Field>
+            <Field label="Ore disponibili a settimana">
+              <input
+                type="number"
+                min="1"
+                max="40"
+                className="input"
+                value={form.oreSettimanali}
+                onChange={set('oreSettimanali')}
+              />
+            </Field>
+
+            <Field label="Come saprai di aver raggiunto l'obiettivo?">
+              <textarea
+                className="input min-h-[90px]"
+                placeholder="Es. Saprò progettare un componente completo con calcoli e disegno"
+                value={form.criterioSuccesso}
+                onChange={set('criterioSuccesso')}
+              />
+            </Field>
+          </div>
+        )}
+
+        {!approfondisci && (
+          <p className="text-xs text-ink/40">
+            Se salti questa parte, useremo valori standard (principiante, 6 ore/settimana) — potrai sempre rigenerare il piano dopo.
+          </p>
+        )}
       </div>
 
       <button
