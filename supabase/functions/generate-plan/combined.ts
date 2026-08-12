@@ -165,12 +165,15 @@ forma esatta:
 Durata scelta: ${duration.weeks} settimane.
 Fai una ricerca web reale per trovare 3-5 fonti affidabili sull'ambito.
 ${formatWarning}
-Dopo aver finito la ricerca, genera 4-6 fasi. Rispondi in JSON con questa
-forma esatta:
+Dopo aver finito la ricerca, genera 4-6 fasi. Per ogni competenza,
+classifica anche se va imparata a memoria (tipo_memoria: "memoria",
+per basi che servono sempre pronte) o se basta saper consultare una
+fonte quando serve (tipo_memoria: "consultabile", per dettagli tecnici
+che si cercano al momento). Rispondi in JSON con questa forma esatta:
 {"sources":[{"title":"...","tipo":"...","affidabilita":"Alta|Media|Bassa","notebooklm":true,"stato":"verificato|dedotto|assunto|non_trovata","url":"..."}],
 "phases":[{"id":1,"titolo":"...","durata":"N sett. · N h/sett.","tag":"verificato|dedotto|assunto",
 "obiettivo":"...","prerequisiti":["..."],
-"competenze":[{"testo":"...","tag":"verificato|dedotto|assunto"}],
+"competenze":[{"testo":"...","tag":"verificato|dedotto|assunto","tipo_memoria":"memoria|consultabile"}],
 "criterio":"...","portfolio":"..."}]}`;
   }
 
@@ -209,6 +212,34 @@ Fonte da sostituire: ${duration.title} (${duration.tipo})
 
 Rispondi in JSON con questa forma esatta, con la nuova fonte:
 {"title":"...","tipo":"...","affidabilita":"Alta|Media|Bassa","notebooklm":true,"stato":"verificato|dedotto|assunto|non_trovata","url":"..."}`;
+  }
+
+  if (stage === "rigenera_fase") {
+    return `${base}${formatWarning}
+La fase seguente è stata segnalata come "${duration.direzione}" dall'utente.
+Rigenera SOLO questa fase, adattando carico e profondità di conseguenza
+(se troppo facile: alza la difficoltà e aggiungi contenuti; se troppo
+difficile: semplifica, spezza in passaggi più piccoli, aggiungi più
+tempo). Mantieni lo stesso id e lo stesso ordine logico nel percorso.
+
+Fase originale: ${JSON.stringify(duration.fase)}
+
+Rispondi in JSON con questa forma esatta (una sola fase):
+{"id":${duration.fase.id},"titolo":"...","durata":"N sett. · N h/sett.","tag":"verificato|dedotto|assunto",
+"obiettivo":"...","prerequisiti":["..."],
+"competenze":[{"testo":"...","tag":"verificato|dedotto|assunto","tipo_memoria":"memoria|consultabile"}],
+"criterio":"...","portfolio":"..."}`;
+  }
+
+  if (stage === "suggerisci_prossimo") {
+    return `
+L'utente ha già completato questi percorsi di studio:
+${duration.map((p) => `- ${p.ambito}: ${p.obiettivo}`).join('\n')}
+${formatWarning}
+Suggerisci UN possibile prossimo percorso coerente con questi già
+completati (una progressione naturale, non una ripetizione). Rispondi
+in JSON con questa forma esatta:
+{"ambito":"...","obiettivo":"...","motivazione":"perché ha senso come prossimo passo, 1-2 frasi"}`;
   }
 
   return base;
