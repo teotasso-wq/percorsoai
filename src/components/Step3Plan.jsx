@@ -8,7 +8,7 @@ import { useLingua } from '../lib/LinguaContext';
 import { LINGUE_DISPONIBILI } from '../lib/i18n';
 
 export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData, pianoSalvato, onSalvaObiettivo, onSegnala }) {
-  const { t, setLingua } = useLingua();
+  const { t, lingua, setLingua } = useLingua();
   const [caricando, setCaricando] = useState(!planData);
   const [errore, setErrore] = useState(null);
   const [tentativo, setTentativo] = useState(0);
@@ -16,7 +16,7 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
   const [traducendo, setTraducendo] = useState(false);
   const [inAscolto, setInAscolto] = useState(false);
 
-  const LINGUE_TRADUZIONE = LINGUE_DISPONIBILI.filter((l) => l.codice !== 'it');
+  const LINGUE_TRADUZIONE = LINGUE_DISPONIBILI;
 
   const rigenera = async (indice) => {
     setRigenerandoIndice(indice);
@@ -54,6 +54,8 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
     }
   };
 
+  const codiceVocaleAttuale = LINGUE_DISPONIBILI.find((l) => l.codice === lingua)?.vocale || 'it-IT';
+
   const ascolta = () => {
     if (inAscolto) {
       fermaLetturaVocale();
@@ -61,7 +63,7 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
       return;
     }
     try {
-      leggiPianoAdAltaVoce(planData, formData.ambito);
+      leggiPianoAdAltaVoce(planData, formData.ambito, codiceVocaleAttuale);
       setInAscolto(true);
     } catch (e) {
       setErrore(e.message);

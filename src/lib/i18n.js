@@ -3,10 +3,10 @@
 // lingua, valore = testo mostrato.
 
 export const LINGUE_DISPONIBILI = [
-  { codice: 'it', etichetta: 'Italiano', linguaAI: 'italiano' },
-  { codice: 'en', etichetta: 'English', linguaAI: 'inglese' },
-  { codice: 'es', etichetta: 'Español', linguaAI: 'spagnolo' },
-  { codice: 'fr', etichetta: 'Français', linguaAI: 'francese' },
+  { codice: 'it', etichetta: 'Italiano', linguaAI: 'italiano', vocale: 'it-IT' },
+  { codice: 'en', etichetta: 'English', linguaAI: 'inglese', vocale: 'en-US' },
+  { codice: 'es', etichetta: 'Español', linguaAI: 'spagnolo', vocale: 'es-ES' },
+  { codice: 'fr', etichetta: 'Français', linguaAI: 'francese', vocale: 'fr-FR' },
 ];
 
 const DIZIONARIO = {
