@@ -72,8 +72,17 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
       {planData && (
         <>
           <div className="space-y-4 mb-10">
-            {planData.phases.map((phase) => (
-              <PhaseCard key={phase.id} phase={phase} formData={formData} />
+            {planData.phases.map((phase, indice) => (
+              <PhaseCard
+                key={phase.id}
+                phase={phase}
+                formData={formData}
+                onAggiornaFase={(nuovaFase) => {
+                  const nuoveFasi = [...planData.phases];
+                  nuoveFasi[indice] = nuovaFase;
+                  onPlanReady({ ...planData, phases: nuoveFasi });
+                }}
+              />
             ))}
           </div>
 

@@ -42,3 +42,15 @@ export function generaSpiegazione(formData, phase) {
 export function rigeneraFonte(formData, fonte) {
   return chiamaFunzione({ stage: 'regenera_fonte', formData, duration: fonte });
 }
+
+export function rigeneraFase(formData, fase, direzione) {
+  return chiamaFunzione({ stage: 'rigenera_fase', formData, duration: { fase, direzione } });
+}
+
+export function suggerisciProssimoPiano(pianiCompletati) {
+  return chiamaFunzione({
+    stage: 'suggerisci_prossimo',
+    formData: { ambito: '', obiettivo: '', livello: '', oreSettimanali: '', criterioSuccesso: '' },
+    duration: pianiCompletati,
+  });
+}

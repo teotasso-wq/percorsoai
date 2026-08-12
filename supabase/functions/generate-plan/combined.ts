@@ -200,5 +200,16 @@ con questa forma esatta:
 {"paragrafi":[{"testo":"...","tag":"verificato|dedotto|assunto"}]}`;
   }
 
+  if (stage === "regenera_fonte") {
+    return `${base}${formatWarning}
+La fonte seguente è stata segnalata come non valida o non pertinente,
+trova una fonte alternativa reale con una ricerca web:
+
+Fonte da sostituire: ${duration.title} (${duration.tipo})
+
+Rispondi in JSON con questa forma esatta, con la nuova fonte:
+{"title":"...","tipo":"...","affidabilita":"Alta|Media|Bassa","notebooklm":true,"stato":"verificato|dedotto|assunto|non_trovata","url":"..."}`;
+  }
+
   return base;
 }

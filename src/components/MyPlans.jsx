@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { suggerisciProssimoPiano } from '../lib/aiClient';
 
 export default function MyPlans({ onOpen, onNewPlan }) {
   const [piani, setPiani] = useState(null);
@@ -7,6 +8,7 @@ export default function MyPlans({ onOpen, onNewPlan }) {
   const [ricerca, setRicerca] = useState('');
   const [confermaCancellazione, setConfermaCancellazione] = useState(false);
   const [cancellando, setCancellando] = useState(false);
+  const [suggerimento, setSuggerimento] = useState(null);
 
   useEffect(() => {
     caricaPiani();
@@ -25,6 +27,15 @@ export default function MyPlans({ onOpen, onNewPlan }) {
 
   const daRiprendere = piani?.find((p) => p.status !== 'completato');
   const completati = piani?.filter((p) => p.status === 'completato') || [];
+
+  useEffect(() => {
+    if (completati.length > 0 && !suggerimento) {
+      const lista = completati.map((p) => p.form_data).filter(Boolean);
+      suggerisciProssimoPiano(lista)
+        .then(setSuggerimento)
+        .catch(() => {}); // suggerimento facoltativo, nessun errore mostrato
+    }
+  }, [completati.length]);
 
   const completatiFiltrati = ricerca
     ? completati.filter((p) => {
@@ -78,6 +89,20 @@ export default function MyPlans({ onOpen, onNewPlan }) {
           </h3>
           <p className="text-sm opacity-80">{daRiprendere.form_data?.obiettivo}</p>
         </button>
+      )}
+
+      {suggerimento && suggerimento.ambito && (
+        <div className="bg-dedotto/10 border border-dedotto/30 rounded-2xl p-6 mb-8">
+          <p className="text-xs uppercase tracking-wide text-navy/60 mb-1">Potrebbe interessarti</p>
+          <h3 className="font-display text-xl text-navy mb-1">{suggerimento.ambito}</h3>
+          <p className="text-sm text-ink/70 mb-3">{suggerimento.motivazione}</p>
+          <button
+            className="btn-secondary text-sm"
+            onClick={() => onNewPlan({ ambito: suggerimento.ambito, obiettivo: suggerimento.obiettivo })}
+          >
+            Crea questo piano
+          </button>
+        </div>
       )}
 
       {totale === 0 && (

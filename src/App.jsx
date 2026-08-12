@@ -60,9 +60,9 @@ export default function App() {
     }
   }, [sessione?.user?.id]);
 
-  const iniziaNuovoPiano = async () => {
+  const iniziaNuovoPiano = async (precompilato) => {
     const userId = sessione?.user?.id;
-    setFormData(FORM_INIZIALE);
+    setFormData(precompilato ? { ...FORM_INIZIALE, ...precompilato } : FORM_INIZIALE);
     setDurata(null);
     setPlanData(null);
     setAuditData(null);

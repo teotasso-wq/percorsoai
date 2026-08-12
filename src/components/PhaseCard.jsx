@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Badge from './Badge';
 import CopyButton from './CopyButton';
-import { generaSpiegazione } from '../lib/aiClient';
+import { generaSpiegazione, rigeneraFase } from '../lib/aiClient';
 
 function buildNotebookPrompts(phase, formData) {
   return [
@@ -28,11 +28,12 @@ function buildNotebookPrompts(phase, formData) {
   ];
 }
 
-export default function PhaseCard({ phase, formData }) {
+export default function PhaseCard({ phase, formData, onAggiornaFase }) {
   const [aperta, setAperta] = useState(false);
   const [spiegazione, setSpiegazione] = useState(null);
   const [caricandoSpiegazione, setCaricandoSpiegazione] = useState(false);
   const [erroreSpiegazione, setErroreSpiegazione] = useState(null);
+  const [rigenerando, setRigenerando] = useState(null);
 
   const richiediSpiegazione = () => {
     setCaricandoSpiegazione(true);
@@ -41,6 +42,19 @@ export default function PhaseCard({ phase, formData }) {
       .then((data) => setSpiegazione(data.paragrafi || []))
       .catch((e) => setErroreSpiegazione(e.message))
       .finally(() => setCaricandoSpiegazione(false));
+  };
+
+  const adattaDifficolta = async (direzione) => {
+    setRigenerando(direzione);
+    try {
+      const nuovaFase = await rigeneraFase(formData, phase, direzione);
+      onAggiornaFase(nuovaFase);
+      setSpiegazione(null); // la vecchia spiegazione non è più coerente
+    } catch (e) {
+      // Errore silenzioso qui, gestito a livello di riprova manuale
+    } finally {
+      setRigenerando(null);
+    }
   };
 
   const prompts = buildNotebookPrompts(phase, formData);
@@ -79,7 +93,15 @@ export default function PhaseCard({ phase, formData }) {
             <div className="space-y-3">
               {phase.competenze.map((c, i) => (
                 <div key={i}>
-                  <p className="text-sm text-ink mb-1">{c.testo}</p>
+                  <p className="text-sm text-ink mb-1">
+                    {c.testo}{' '}
+                    {c.tipo_memoria === 'memoria' && (
+                      <span className="text-xs text-navy/50" title="Da sapere a memoria">🧠</span>
+                    )}
+                    {c.tipo_memoria === 'consultabile' && (
+                      <span className="text-xs text-navy/50" title="Da consultare quando serve">📖</span>
+                    )}
+                  </p>
                   <Badge type={c.tag} />
                 </div>
               ))}
@@ -88,6 +110,24 @@ export default function PhaseCard({ phase, formData }) {
 
           <InfoBox titolo="Criterio di completamento" testo={phase.criterio} />
           <InfoBox titolo="Output per il portfolio" testo={phase.portfolio} />
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-ink/50">Questa fase è:</span>
+            <button
+              className="text-xs btn-secondary py-1.5 px-3 disabled:opacity-40"
+              onClick={() => adattaDifficolta('troppo_facile')}
+              disabled={rigenerando !== null}
+            >
+              {rigenerando === 'troppo_facile' ? 'Adatto...' : 'Troppo facile'}
+            </button>
+            <button
+              className="text-xs btn-secondary py-1.5 px-3 disabled:opacity-40"
+              onClick={() => adattaDifficolta('troppo_difficile')}
+              disabled={rigenerando !== null}
+            >
+              {rigenerando === 'troppo_difficile' ? 'Adatto...' : 'Troppo difficile'}
+            </button>
+          </div>
 
           {/* Spiegazione diretta — generata al primo click (lazy loading) */}
           <div>
