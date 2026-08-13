@@ -6,6 +6,8 @@ import { generaPiano, rigeneraFonte, traduciPiano } from '../lib/aiClient';
 import { leggiPianoAdAltaVoce, fermaLetturaVocale } from '../lib/textToSpeech';
 import { useLingua } from '../lib/LinguaContext';
 import { LINGUE_DISPONIBILI } from '../lib/i18n';
+import ModalitaPresentazione from './ModalitaPresentazione';
+import MappaMentale from './MappaMentale';
 
 export default function Step3Plan({ formData, duration, onNext, onBack, onPlanReady, planData, pianoSalvato, onSalvaObiettivo, onSegnala }) {
   const { t, lingua, setLingua } = useLingua();
@@ -15,6 +17,9 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
   const [rigenerandoIndice, setRigenerandoIndice] = useState(null);
   const [traducendo, setTraducendo] = useState(false);
   const [inAscolto, setInAscolto] = useState(false);
+  const [mostraPresentazione, setMostraPresentazione] = useState(false);
+  const [mostraMappa, setMostraMappa] = useState(false);
+  const [soloPratica, setSoloPratica] = useState(false);
 
   const LINGUE_TRADUZIONE = LINGUE_DISPONIBILI;
 
@@ -96,6 +101,13 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
 
   return (
     <div>
+      {mostraPresentazione && (
+        <ModalitaPresentazione planData={planData} ambito={formData.ambito} onClose={() => setMostraPresentazione(false)} />
+      )}
+      {mostraMappa && (
+        <MappaMentale planData={planData} ambito={formData.ambito} onClose={() => setMostraMappa(false)} />
+      )}
+
       <h1 className="font-display text-3xl md:text-4xl text-navy mb-2">{t('step3_titolo')}</h1>
       <p className="text-ink/60 mb-8">{t('step3_sottotitolo')}</p>
 
@@ -117,6 +129,18 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
               {traducendo ? t('step3_traducendo') : `🌐 ${l.etichetta}`}
             </button>
           ))}
+          <button className="btn-secondary text-sm" onClick={() => setMostraPresentazione(true)}>
+            🖥️ Presentazione
+          </button>
+          <button className="btn-secondary text-sm" onClick={() => setMostraMappa(true)}>
+            🗺️ Mappa
+          </button>
+          <button
+            className={`btn-secondary text-sm ${soloPratica ? 'bg-navy text-paper' : ''}`}
+            onClick={() => setSoloPratica(!soloPratica)}
+          >
+            🛠️ {soloPratica ? 'Mostra tutto' : 'Solo pratica'}
+          </button>
         </div>
       )}
 
@@ -150,6 +174,7 @@ export default function Step3Plan({ formData, duration, onNext, onBack, onPlanRe
                   const nuoveSpiegazioni = { ...(pianoSalvato?.spiegazioni || {}), [faseId]: paragrafi };
                   onSalvaObiettivo({ spiegazioni: nuoveSpiegazioni });
                 }}
+                soloPratica={soloPratica}
                 onAggiornaFase={(nuovaFase) => {
                   const nuoveFasi = [...planData.phases];
                   nuoveFasi[indice] = nuovaFase;

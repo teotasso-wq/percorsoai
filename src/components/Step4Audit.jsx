@@ -13,6 +13,36 @@ export default function Step4Audit({ formData, planData, auditDataIniziale, onAu
   const [audit, setAudit] = useState(auditDataIniziale);
   const [errore, setErrore] = useState(null);
   const [caricando, setCaricando] = useState(!auditDataIniziale);
+  const [testoCopiato, setTestoCopiato] = useState(false);
+
+  // Onda I, idea 150: testo semplice pronto da incollare in Notion,
+  // Todoist o qualunque altro strumento — nessuna integrazione tecnica,
+  // solo un formato leggibile ovunque.
+  const costruisciTestoPiano = () => {
+    let testo = `${formData.ambito}\n${formData.obiettivo}\n\n`;
+    planData.phases.forEach((fase, i) => {
+      testo += `${i + 1}. ${fase.titolo} (${fase.durata})\n   ${fase.obiettivo}\n\n`;
+    });
+    return testo;
+  };
+
+  const copiaComeTesto = async () => {
+    try {
+      await navigator.clipboard.writeText(costruisciTestoPiano());
+      setTestoCopiato(true);
+      setTimeout(() => setTestoCopiato(false), 1500);
+    } catch {
+      // silenzioso
+    }
+  };
+
+  // Onda I, idea 152: condivisione rapida via WhatsApp — un link con
+  // testo precompilato, nessun file necessario.
+  const condividiWhatsApp = () => {
+    const messaggio = `Ho creato un piano di studio su PercorsoAI: ${formData.ambito}\n${formData.obiettivo}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(messaggio)}`;
+    window.open(url, '_blank');
+  };
 
   useEffect(() => {
     if (auditDataIniziale) return;
@@ -84,6 +114,12 @@ export default function Step4Audit({ formData, planData, auditDataIniziale, onAu
           <div className="flex flex-wrap gap-3 mb-10">
             <button className="btn-secondary" onClick={onExportPortfolio}>{t('step4_esporta_portfolio')}</button>
             <button className="btn-primary" onClick={onExportPiano}>{t('step4_esporta_piano')}</button>
+            <button className="btn-secondary" onClick={copiaComeTesto}>
+              {testoCopiato ? 'Copiato ✓' : '📋 Copia come testo'}
+            </button>
+            <button className="btn-secondary" onClick={condividiWhatsApp}>
+              💬 Condividi su WhatsApp
+            </button>
           </div>
         </>
       )}

@@ -29,7 +29,7 @@ function buildNotebookPrompts(phase, formData) {
   ];
 }
 
-export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvato, onSalvaSpiegazione }) {
+export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvato, onSalvaSpiegazione, soloPratica }) {
   const { t } = useLingua();
   const [aperta, setAperta] = useState(false);
   const [spiegazione, setSpiegazione] = useState(
@@ -92,8 +92,9 @@ export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvat
 
       {aperta && (
         <div className="px-6 pb-6 space-y-6 border-t border-navy/10 pt-6">
-          <p className="text-ink">{phase.obiettivo}</p>
+          {!soloPratica && <p className="text-ink">{phase.obiettivo}</p>}
 
+          {!soloPratica && (
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-2">{t('fase_prerequisiti')}</h4>
             <ul className="list-disc list-inside text-sm text-ink/80 space-y-1">
@@ -102,7 +103,9 @@ export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvat
               ))}
             </ul>
           </div>
+          )}
 
+          {!soloPratica && (
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-2">{t('fase_competenze')}</h4>
             <div className="space-y-3">
@@ -122,6 +125,7 @@ export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvat
               ))}
             </div>
           </div>
+          )}
 
           <InfoBox titolo={t('fase_criterio')} testo={phase.criterio} />
           <InfoBox titolo={t('fase_output')} testo={phase.portfolio} />

@@ -20,7 +20,13 @@ export default function Step2Duration({ selected, formData, onNext, onBack }) {
   return (
     <div>
       <h1 className="font-display text-3xl md:text-4xl text-navy mb-2">{t('step2_titolo')}</h1>
-      <p className="text-ink/60 mb-8">{t('step2_sottotitolo')}</p>
+      <p className="text-ink/60 mb-6">{t('step2_sottotitolo')}</p>
+
+      <div className="bg-white border border-navy/15 rounded-xl p-4 mb-8 text-sm">
+        <p className="text-xs font-bold uppercase tracking-wide text-navy/50 mb-2">I tuoi dati</p>
+        <p className="text-ink"><strong>Ambito:</strong> {formData.ambito}</p>
+        <p className="text-ink/70 mt-1"><strong>Obiettivo:</strong> {formData.obiettivo}</p>
+      </div>
 
       {caricando && (
         <div className="text-navy/60 text-sm py-8">{t('step2_caricamento')}</div>

@@ -40,6 +40,14 @@ export default function App() {
   const [mostraTutorial, setMostraTutorial] = useState(false);
   const [mostraGuida, setMostraGuida] = useState(false);
   const [menuAperto, setMenuAperto] = useState(false);
+  const [mostraPromemoriaPausa, setMostraPromemoriaPausa] = useState(false);
+
+  // Onda G, idea 174: dopo una sessione lunga, un avviso gentile —
+  // nessuna chiamata AI, solo un timer locale.
+  useEffect(() => {
+    const timer = setTimeout(() => setMostraPromemoriaPausa(true), 45 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (sessione && !localStorage.getItem('percorsoai_tutorial_visto')) {
@@ -254,6 +262,17 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {mostraPromemoriaPausa && (
+        <div className="max-w-3xl mx-auto px-4 md:px-6 pt-4">
+          <div className="bg-dedotto/10 border border-dedotto/30 rounded-xl p-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-navy">Stai usando l'app da un po' — magari una pausa? ☕</p>
+            <button className="text-xs text-navy/50 underline shrink-0" onClick={() => setMostraPromemoriaPausa(false)}>
+              Chiudi
+            </button>
+          </div>
+        </div>
+      )}
 
       {vista === 'lista' && (
         <MyPlans
