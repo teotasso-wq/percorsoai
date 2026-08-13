@@ -7,7 +7,19 @@ const AMBITI_SENSIBILI = ['elettric', 'clinic', 'medic', 'chirurg', 'idraulic', 
 
 export default function Step1Form({ data, onNext }) {
   const { t } = useLingua();
-  const [form, setForm] = useState(data);
+  const [form, setForm] = useState(() => {
+    // Onda F, idea 136: se l'utente aveva iniziato a scrivere e non ha
+    // finito, ripristina la bozza salvata sul telefono.
+    if (!data.ambito && !data.obiettivo) {
+      try {
+        const bozza = localStorage.getItem('percorsoai_bozza_step1');
+        if (bozza) return { ...data, ...JSON.parse(bozza) };
+      } catch {
+        // bozza non leggibile, ignora e riparti da zero
+      }
+    }
+    return data;
+  });
   const [approfondisci, setApprofondisci] = useState(false);
   const [caricandoCv, setCaricandoCv] = useState(false);
   const [notaCv, setNotaCv] = useState(null);
@@ -40,7 +52,11 @@ export default function Step1Form({ data, onNext }) {
     form.ambito.toLowerCase().includes(k)
   );
 
-  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const set = (field) => (e) => {
+    const nuovoForm = { ...form, [field]: e.target.value };
+    setForm(nuovoForm);
+    localStorage.setItem('percorsoai_bozza_step1', JSON.stringify(nuovoForm));
+  };
 
   const puoiContinuare = form.ambito && form.obiettivo;
 
@@ -143,7 +159,10 @@ export default function Step1Form({ data, onNext }) {
       <button
         className="btn-primary mt-10 w-full md:w-auto"
         disabled={!puoiContinuare}
-        onClick={() => onNext(form)}
+        onClick={() => {
+          localStorage.removeItem('percorsoai_bozza_step1');
+          onNext(form);
+        }}
       >
         {t('continua')}
       </button>

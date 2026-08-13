@@ -57,12 +57,44 @@ Deno.serve(async (req) => {
   try {
     const { stage, formData, duration } = await req.json();
 
+    // Ottimizzazione 10: blocca subito richieste senza i dati minimi,
+    // invece di sprecare una chiamata AI su una richiesta incompleta.
+    if (!formData || (stage !== "suggerisci_prossimo" && !formData.ambito && stage !== "inferisci_livello")) {
+      throw new Error("Dati mancanti: manca l'ambito.");
+    }
+
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) {
       throw new Error("Chiave AI non configurata nei segreti Supabase.");
     }
 
     const userPrompt = buildUserPrompt(stage, formData, duration);
+
+    // Ottimizzazione 1: la ricerca web reale serve SOLO quando l'AI deve
+    // trovare fonti (generazione piano, rigenerazione fonte). Per tutte
+    // le altre richieste (durata, audit, traduzione, ecc.) è inutile e
+    // rischia solo di far scattare ricerche non necessarie a pagamento.
+    const richiedeRicerca = stage === "plan" || stage === "regenera_fonte";
+
+    const corpoRichiesta = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 8000,
+      // Ottimizzazione 2: prompt caching sul Metodo — se più chiamate
+      // arrivano ravvicinate, la parte fissa delle Regole costa molto
+      // meno dalla seconda chiamata in poi.
+      system: [
+        {
+          type: "text",
+          text: METHOD_SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: userPrompt }],
+    };
+
+    if (richiedeRicerca) {
+      corpoRichiesta.tools = [{ type: "web_search_20250305", name: "web_search" }];
+    }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -71,13 +103,7 @@ Deno.serve(async (req) => {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 8000,
-        system: METHOD_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-      }),
+      body: JSON.stringify(corpoRichiesta),
     });
 
     if (!response.ok) {

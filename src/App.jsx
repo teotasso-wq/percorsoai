@@ -15,6 +15,7 @@ import PrintPianoCompleto from './components/PrintPianoCompleto';
 import PrintPortfolio from './components/PrintPortfolio';
 import Guida from './components/Guida';
 import { useLingua } from './lib/LinguaContext';
+import { DEMO_PHASES, DEMO_SOURCES, DEMO_AUDIT } from './data/demoPlan';
 
 const FORM_INIZIALE = {
   ambito: '',
@@ -38,6 +39,7 @@ export default function App() {
   const [streak, setStreak] = useState(null);
   const [mostraTutorial, setMostraTutorial] = useState(false);
   const [mostraGuida, setMostraGuida] = useState(false);
+  const [menuAperto, setMenuAperto] = useState(false);
 
   useEffect(() => {
     if (sessione && !localStorage.getItem('percorsoai_tutorial_visto')) {
@@ -49,6 +51,33 @@ export default function App() {
     localStorage.setItem('percorsoai_tutorial_visto', '1');
     setMostraTutorial(false);
   };
+
+  // Onda F, idea 128: al primissimo accesso (nessun piano ancora),
+  // crea un piano di esempio già pronto nella cronologia, così la
+  // home non è mai vuota per un nuovo utente. Usa dati statici, nessuna
+  // chiamata AI.
+  useEffect(() => {
+    const creaPianoEsempioSeNecessario = async () => {
+      const userId = sessione?.user?.id;
+      if (!userId) return;
+      const { count } = await supabase
+        .from('piani')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      if (count === 0) {
+        await supabase.from('piani').insert({
+          user_id: userId,
+          form_data: { ambito: 'Progettista meccanico (esempio)', obiettivo: 'Vedere come appare un piano completo, con fasi, fonti e audit finale.' },
+          duration_data: { weeks: 10 },
+          plan_data: { phases: DEMO_PHASES, sources: DEMO_SOURCES },
+          audit_data: DEMO_AUDIT,
+          status: 'completato',
+          esempio: true,
+        });
+      }
+    };
+    if (sessione?.user?.id) creaPianoEsempioSeNecessario();
+  }, [sessione?.user?.id]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessione(data.session));
@@ -171,35 +200,70 @@ export default function App() {
     <div className="min-h-screen bg-paper">
       {mostraTutorial && <Tutorial onClose={chiudiTutorial} />}
       <header className="border-b border-navy/10 bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
-          <button className="flex items-center gap-3" onClick={() => setVista('lista')}>
-            <div className="w-8 h-8 rounded-full border-2 border-navy flex items-center justify-center text-navy font-display font-bold text-sm">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-2">
+          <button className="flex items-center gap-2 min-w-0" onClick={() => setVista('lista')}>
+            <div className="w-8 h-8 rounded-full border-2 border-navy flex items-center justify-center text-navy font-display font-bold text-sm shrink-0">
               P
             </div>
-            <span className="font-display text-xl text-navy">{t('app_nome')}</span>
-          </button>
-          <div className="flex items-center gap-4">
+            <span className="font-display text-lg text-navy truncate">{t('app_nome')}</span>
             {streak !== null && streak > 0 && (
-              <span className="text-sm font-semibold text-dedotto">🔥 {streak} {streak === 1 ? 'giorno' : 'giorni'}</span>
+              <span className="text-xs font-semibold text-dedotto whitespace-nowrap shrink-0">🔥 {streak}</span>
             )}
-            <button className="text-sm text-navy/60 underline" onClick={() => setMostraGuida(true)}>
-              {t('guida')}
+          </button>
+
+          <div className="relative shrink-0">
+            <button
+              className="w-9 h-9 flex items-center justify-center text-navy text-xl"
+              onClick={() => setMenuAperto(!menuAperto)}
+            >
+              ☰
             </button>
-            <button className="text-sm text-navy/60 underline" onClick={() => setVista('statistiche')}>
-              Statistiche
-            </button>
-            <button className="text-sm text-navy/60 underline" onClick={() => setVista('impostazioni')}>
-              Impostazioni
-            </button>
-            <button className="text-sm text-navy/60 underline" onClick={() => supabase.auth.signOut()}>
-              {t('esci')}
-            </button>
+            {menuAperto && (
+              <div className="absolute right-0 top-11 bg-white border border-navy/15 rounded-xl shadow-lg py-2 min-w-[160px] z-20">
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-navy hover:bg-paper"
+                  onClick={() => {
+                    localStorage.setItem('percorsoai_ha_aperto_guida', '1');
+                    setMostraGuida(true);
+                    setMenuAperto(false);
+                  }}
+                >
+                  {t('guida')}
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-navy hover:bg-paper"
+                  onClick={() => { setVista('statistiche'); setMenuAperto(false); }}
+                >
+                  Statistiche
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-navy hover:bg-paper"
+                  onClick={() => { setVista('impostazioni'); setMenuAperto(false); }}
+                >
+                  Impostazioni
+                </button>
+                <div className="border-t border-navy/10 my-1" />
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-nonTrovata hover:bg-paper"
+                  onClick={() => supabase.auth.signOut()}
+                >
+                  {t('esci')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       {vista === 'lista' && (
-        <MyPlans onOpen={apriPianoSalvato} onNewPlan={iniziaNuovoPiano} />
+        <MyPlans
+          onOpen={apriPianoSalvato}
+          onNewPlan={iniziaNuovoPiano}
+          onApriGuida={() => {
+            localStorage.setItem('percorsoai_ha_aperto_guida', '1');
+            setMostraGuida(true);
+          }}
+        />
       )}
 
       {vista === 'statistiche' && (
@@ -266,6 +330,7 @@ export default function App() {
                   { duration_data: durata, plan_data: planData, audit_data: audit },
                   'completato'
                 );
+                localStorage.setItem('percorsoai_ha_generato_piano', '1');
               }}
               onBack={() => setStep(3)}
               onExportPiano={() => setVista('stampa-piano')}

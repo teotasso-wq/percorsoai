@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { suggerisciProssimoPiano } from '../lib/aiClient';
 import { useLingua } from '../lib/LinguaContext';
+import ChecklistPrimiPassi from './ChecklistPrimiPassi';
 
-export default function MyPlans({ onOpen, onNewPlan }) {
+export default function MyPlans({ onOpen, onNewPlan, onApriGuida }) {
   const { t } = useLingua();
   const [piani, setPiani] = useState(null);
   const [errore, setErrore] = useState(null);
@@ -11,6 +12,13 @@ export default function MyPlans({ onOpen, onNewPlan }) {
   const [confermaCancellazione, setConfermaCancellazione] = useState(false);
   const [cancellando, setCancellando] = useState(false);
   const [suggerimento, setSuggerimento] = useState(null);
+  const [confermaEliminaId, setConfermaEliminaId] = useState(null);
+
+  const eliminaPiano = async (id) => {
+    await supabase.from('piani').delete().eq('id', id);
+    setConfermaEliminaId(null);
+    caricaPiani();
+  };
 
   useEffect(() => {
     caricaPiani();
@@ -99,24 +107,43 @@ export default function MyPlans({ onOpen, onNewPlan }) {
       )}
 
       {totale > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-3 gap-2 mb-8">
           <StatBox numero={totale} etichetta={t('piani_totali')} />
           <StatBox numero={numCompletati} etichetta={t('piani_completati_stat')} />
           <StatBox numero={`${tassoCompletamento}%`} etichetta={t('piani_tasso')} />
         </div>
       )}
 
+      <ChecklistPrimiPassi onNewPlan={() => onNewPlan()} onApriGuida={onApriGuida} />
+
       {daRiprendere && (
-        <button
-          onClick={() => onOpen(daRiprendere)}
-          className="w-full text-left bg-navy text-paper rounded-2xl p-6 mb-8 hover:bg-navyDark transition-colors"
-        >
-          <p className="text-xs uppercase tracking-wide opacity-70 mb-1">{t('piani_riprendi')}</p>
-          <h3 className="font-display text-xl mb-1">
-            {daRiprendere.form_data?.ambito || 'Piano senza titolo'}
-          </h3>
-          <p className="text-sm opacity-80">{daRiprendere.form_data?.obiettivo}</p>
-        </button>
+        <div className="bg-navy text-paper rounded-2xl p-6 mb-8">
+          <button onClick={() => onOpen(daRiprendere)} className="w-full text-left">
+            <p className="text-xs uppercase tracking-wide opacity-70 mb-1">{t('piani_riprendi')}</p>
+            <h3 className="font-display text-xl mb-1">
+              {daRiprendere.form_data?.ambito || 'Piano senza titolo'}
+            </h3>
+            <p className="text-sm opacity-80">{daRiprendere.form_data?.obiettivo}</p>
+          </button>
+          {confermaEliminaId === daRiprendere.id ? (
+            <div className="mt-3 pt-3 border-t border-paper/20 flex items-center gap-3">
+              <span className="text-xs opacity-70">Eliminare questa bozza?</span>
+              <button className="text-xs underline opacity-70" onClick={() => setConfermaEliminaId(null)}>
+                Annulla
+              </button>
+              <button className="text-xs underline font-semibold" onClick={() => eliminaPiano(daRiprendere.id)}>
+                Elimina
+              </button>
+            </div>
+          ) : (
+            <button
+              className="mt-3 pt-3 border-t border-paper/20 w-full text-left text-xs underline opacity-60"
+              onClick={() => setConfermaEliminaId(daRiprendere.id)}
+            >
+              Elimina bozza
+            </button>
+          )}
+        </div>
       )}
 
       {suggerimento && suggerimento.ambito && (
@@ -152,31 +179,53 @@ export default function MyPlans({ onOpen, onNewPlan }) {
             {completatiFiltrati.map((p) => {
               const punteggio = calcolaPunteggioFiducia(p.audit_data);
               return (
-                <button
-                  key={p.id}
-                  onClick={() => onOpen(p)}
-                  className="w-full text-left bg-white border border-navy/15 rounded-2xl p-5 hover:border-navy transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-display text-xl text-navy mb-1">
-                        {p.form_data?.ambito || 'Piano senza titolo'}
-                      </h3>
-                      <p className="text-sm text-ink/60 mb-2">{p.form_data?.obiettivo}</p>
-                      <div className="flex items-center gap-3 text-xs text-navy/50">
-                        <span>{new Date(p.updated_at || p.created_at).toLocaleDateString('it-IT')}</span>
-                        {p.audit_data?.verdetto && <span>· {p.audit_data.verdetto}</span>}
+                <div key={p.id} className="bg-white border border-navy/15 rounded-2xl p-5 hover:border-navy transition-colors">
+                  <button onClick={() => onOpen(p)} className="w-full text-left">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-display text-xl text-navy mb-1">
+                          {p.form_data?.ambito || 'Piano senza titolo'}
+                          {p.esempio && (
+                            <span className="ml-2 text-[10px] align-middle bg-dedotto/15 text-dedotto px-2 py-0.5 rounded-full uppercase tracking-wide">
+                              Esempio
+                            </span>
+                          )}
+                        </h3>
+                        <p className="text-sm text-ink/60 mb-2">{p.form_data?.obiettivo}</p>
+                        <div className="flex items-center gap-3 text-xs text-navy/50">
+                          <span>{new Date(p.updated_at || p.created_at).toLocaleDateString('it-IT')}</span>
+                          {p.audit_data?.verdetto && <span>· {p.audit_data.verdetto}</span>}
+                        </div>
                       </div>
+                      {punteggio !== null && (
+                        <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold ${
+                          punteggio >= 85 ? 'bg-verificato/10 text-verificato' : punteggio >= 60 ? 'bg-dedotto/10 text-dedotto' : 'bg-nonTrovata/10 text-nonTrovata'
+                        }`}>
+                          {punteggio}
+                        </div>
+                      )}
                     </div>
-                    {punteggio !== null && (
-                      <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold ${
-                        punteggio >= 85 ? 'bg-verificato/10 text-verificato' : punteggio >= 60 ? 'bg-dedotto/10 text-dedotto' : 'bg-nonTrovata/10 text-nonTrovata'
-                      }`}>
-                        {punteggio}
-                      </div>
-                    )}
-                  </div>
-                </button>
+                  </button>
+
+                  {confermaEliminaId === p.id ? (
+                    <div className="mt-3 pt-3 border-t border-navy/10 flex items-center gap-3">
+                      <span className="text-xs text-navy/60">Eliminare questo piano?</span>
+                      <button className="text-xs text-navy/50 underline" onClick={() => setConfermaEliminaId(null)}>
+                        Annulla
+                      </button>
+                      <button className="text-xs text-nonTrovata font-semibold underline" onClick={() => eliminaPiano(p.id)}>
+                        Elimina
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="mt-3 pt-3 border-t border-navy/10 w-full text-left text-xs text-nonTrovata/70 underline"
+                      onClick={() => setConfermaEliminaId(p.id)}
+                    >
+                      Elimina piano
+                    </button>
+                  )}
+                </div>
               );
             })}
             {completatiFiltrati.length === 0 && (
@@ -218,9 +267,9 @@ export default function MyPlans({ onOpen, onNewPlan }) {
 
 function StatBox({ numero, etichetta }) {
   return (
-    <div className="bg-white border border-navy/15 rounded-xl p-4 text-center">
-      <p className="font-display text-2xl text-navy">{numero}</p>
-      <p className="text-xs text-ink/50 mt-1">{etichetta}</p>
+    <div className="bg-white border border-navy/15 rounded-xl px-2 py-3 text-center overflow-hidden">
+      <p className="font-display text-xl md:text-2xl text-navy">{numero}</p>
+      <p className="text-[11px] leading-tight text-ink/50 mt-1 break-words">{etichetta}</p>
     </div>
   );
 }
