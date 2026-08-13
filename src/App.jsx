@@ -14,6 +14,7 @@ import Step4Audit from './components/Step4Audit';
 import PrintPianoCompleto from './components/PrintPianoCompleto';
 import PrintPortfolio from './components/PrintPortfolio';
 import Guida from './components/Guida';
+import PianiPrezzi from './components/PianiPrezzi';
 import { useLingua } from './lib/LinguaContext';
 import { DEMO_PHASES, DEMO_SOURCES, DEMO_AUDIT } from './data/demoPlan';
 
@@ -39,6 +40,7 @@ export default function App() {
   const [streak, setStreak] = useState(null);
   const [mostraTutorial, setMostraTutorial] = useState(false);
   const [mostraGuida, setMostraGuida] = useState(false);
+  const [mostraPrezzi, setMostraPrezzi] = useState(false);
   const [menuAperto, setMenuAperto] = useState(false);
   const [mostraPromemoriaPausa, setMostraPromemoriaPausa] = useState(false);
 
@@ -200,6 +202,10 @@ export default function App() {
     );
   }
 
+  if (mostraPrezzi) {
+    return <PianiPrezzi onClose={() => setMostraPrezzi(false)} />;
+  }
+
   if (mostraGuida) {
     return <Guida onClose={() => setMostraGuida(false)} />;
   }
@@ -237,6 +243,12 @@ export default function App() {
                   }}
                 >
                   {t('guida')}
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-navy hover:bg-paper"
+                  onClick={() => { setMostraPrezzi(true); setMenuAperto(false); }}
+                >
+                  Piani e prezzi
                 </button>
                 <button
                   className="w-full text-left px-4 py-2 text-sm text-navy hover:bg-paper"

@@ -299,5 +299,35 @@ ${JSON.stringify(duration.piano)}
 Rispondi con lo stesso oggetto JSON tradotto, stessa struttura esatta.`;
   }
 
+  if (stage === "autovalutazione") {
+    return `${base}${formatWarning}
+Genera 3-5 domande di autovalutazione da porsi PRIMA di iniziare questa
+fase, per capire cosa già si sa. Non servono risposte "giuste o
+sbagliate" da correggere — sono domande di riflessione personale.
+
+Fase: ${duration.titolo}
+Competenze da valutare: ${duration.competenze.map((c) => c.testo).join('; ')}
+
+Rispondi in JSON con questa forma esatta:
+{"domande":["...", "..."]}`;
+  }
+
+  if (stage === "career_advisor") {
+    return `${base}${formatWarning}
+L'utente ha completato questo percorso di studio:
+Ambito: ${duration.ambito}
+Competenze acquisite: ${duration.competenze.join('; ')}
+
+Suggerisci 2-3 ruoli professionali o tipi di posizione lavorativa
+coerenti con queste competenze acquisite. NON inventare aziende o
+annunci reali specifici — parla solo di tipologie di ruolo in generale
+(es. "Junior Data Analyst", non un'azienda specifica). Dichiara sempre
+che è un suggerimento orientativo, non una garanzia di impiego.
+
+Rispondi in JSON con questa forma esatta:
+{"ruoli":[{"nome":"...","perche":"perché le competenze acquisite sono coerenti, 1-2 frasi"}],
+"avviso":"breve nota che chiarisce che è un suggerimento orientativo AI, non garanzia di impiego"}`;
+  }
+
   return base;
 }
