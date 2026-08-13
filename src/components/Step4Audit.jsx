@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { generaAudit } from '../lib/aiClient';
+import { generaAudit, generaConsiglioCarriera } from '../lib/aiClient';
 import { useLingua } from '../lib/LinguaContext';
 
 const RISCHIO_COLORE = {
@@ -14,6 +14,16 @@ export default function Step4Audit({ formData, planData, auditDataIniziale, onAu
   const [errore, setErrore] = useState(null);
   const [caricando, setCaricando] = useState(!auditDataIniziale);
   const [testoCopiato, setTestoCopiato] = useState(false);
+  const [consiglioCarriera, setConsiglioCarriera] = useState(null);
+  const [caricandoCarriera, setCaricandoCarriera] = useState(false);
+
+  const richiediConsiglioCarriera = () => {
+    setCaricandoCarriera(true);
+    generaConsiglioCarriera(formData, planData)
+      .then(setConsiglioCarriera)
+      .catch(() => {})
+      .finally(() => setCaricandoCarriera(false));
+  };
 
   // Onda I, idea 150: testo semplice pronto da incollare in Notion,
   // Todoist o qualunque altro strumento — nessuna integrazione tecnica,
@@ -110,6 +120,29 @@ export default function Step4Audit({ formData, planData, auditDataIniziale, onAu
               <p className="font-display text-2xl text-navy">{audit.verdetto}</p>
             </div>
           </div>
+
+          {audit.verdetto !== 'DA REVISIONARE' && (
+            <div className="bg-white border border-navy/15 rounded-2xl p-6 mb-6">
+              <h2 className="font-display text-2xl text-navy mb-3">Ruoli professionali coerenti</h2>
+              {!consiglioCarriera && !caricandoCarriera && (
+                <button className="btn-secondary text-sm" onClick={richiediConsiglioCarriera}>
+                  💼 Vedi ruoli coerenti con queste competenze
+                </button>
+              )}
+              {caricandoCarriera && <p className="text-sm text-navy/60">Sto cercando ruoli coerenti...</p>}
+              {consiglioCarriera && (
+                <div className="space-y-4">
+                  {consiglioCarriera.ruoli?.map((r, i) => (
+                    <div key={i} className="bg-paper border border-navy/10 rounded-xl p-4">
+                      <p className="font-semibold text-navy mb-1">{r.nome}</p>
+                      <p className="text-sm text-ink/70">{r.perche}</p>
+                    </div>
+                  ))}
+                  <p className="text-xs text-ink/50 italic">{consiglioCarriera.avviso}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-3 mb-10">
             <button className="btn-secondary" onClick={onExportPortfolio}>{t('step4_esporta_portfolio')}</button>

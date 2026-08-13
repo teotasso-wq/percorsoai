@@ -70,3 +70,16 @@ export function traduciPiano(piano, lingua) {
     duration: { piano, lingua },
   });
 }
+
+export function generaAutovalutazione(formData, phase) {
+  return chiamaFunzione({ stage: 'autovalutazione', formData, duration: phase });
+}
+
+export function generaConsiglioCarriera(formData, planData) {
+  const competenze = (planData.phases || []).flatMap((f) => f.competenze.map((c) => c.testo));
+  return chiamaFunzione({
+    stage: 'career_advisor',
+    formData,
+    duration: { ambito: formData.ambito, competenze },
+  });
+}

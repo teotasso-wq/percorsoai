@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Badge from './Badge';
 import CopyButton from './CopyButton';
-import { generaSpiegazione, rigeneraFase } from '../lib/aiClient';
+import { generaSpiegazione, rigeneraFase, generaAutovalutazione } from '../lib/aiClient';
+import { leggiFaseAdAltaVoce, fermaLetturaVocale } from '../lib/textToSpeech';
 import { useLingua } from '../lib/LinguaContext';
+import { LINGUE_DISPONIBILI } from '../lib/i18n';
 
 function buildNotebookPrompts(phase, formData) {
   return [
@@ -30,7 +32,7 @@ function buildNotebookPrompts(phase, formData) {
 }
 
 export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvato, onSalvaSpiegazione, soloPratica }) {
-  const { t } = useLingua();
+  const { t, lingua } = useLingua();
   const [aperta, setAperta] = useState(false);
   const [spiegazione, setSpiegazione] = useState(
     pianoSalvato?.spiegazioni?.[phase.id] || null
@@ -38,6 +40,33 @@ export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvat
   const [caricandoSpiegazione, setCaricandoSpiegazione] = useState(false);
   const [erroreSpiegazione, setErroreSpiegazione] = useState(null);
   const [rigenerando, setRigenerando] = useState(null);
+  const [autovalutazione, setAutovalutazione] = useState(null);
+  const [caricandoAutovalutazione, setCaricandoAutovalutazione] = useState(false);
+  const [inAscoltoFase, setInAscoltoFase] = useState(false);
+
+  const codiceVocale = LINGUE_DISPONIBILI.find((l) => l.codice === lingua)?.vocale || 'it-IT';
+
+  const richiediAutovalutazione = () => {
+    setCaricandoAutovalutazione(true);
+    generaAutovalutazione(formData, phase)
+      .then((data) => setAutovalutazione(data.domande || []))
+      .catch(() => {})
+      .finally(() => setCaricandoAutovalutazione(false));
+  };
+
+  const ascoltaFase = () => {
+    if (inAscoltoFase) {
+      fermaLetturaVocale();
+      setInAscoltoFase(false);
+      return;
+    }
+    try {
+      leggiFaseAdAltaVoce(phase, codiceVocale);
+      setInAscoltoFase(true);
+    } catch {
+      // silenzioso, se il browser non supporta la lettura vocale
+    }
+  };
 
   const richiediSpiegazione = () => {
     // Ottimizzazione 5: se questa fase ha già una spiegazione salvata
@@ -147,6 +176,34 @@ export default function PhaseCard({ phase, formData, onAggiornaFase, pianoSalvat
               {rigenerando === 'troppo_difficile' ? t('fase_adatto') : t('fase_troppo_difficile')}
             </button>
           </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button className="btn-secondary text-sm" onClick={ascoltaFase}>
+              {inAscoltoFase ? '⏸ Ferma' : '🔊 Ascolta questa fase'}
+            </button>
+            {!autovalutazione && !caricandoAutovalutazione && (
+              <button className="btn-secondary text-sm" onClick={richiediAutovalutazione}>
+                🤔 Autovalutati prima di iniziare
+              </button>
+            )}
+          </div>
+
+          {caricandoAutovalutazione && (
+            <p className="text-sm text-navy/60">Preparo le domande...</p>
+          )}
+
+          {autovalutazione && (
+            <div className="bg-paper border border-navy/10 rounded-xl p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-navy/60 mb-3">
+                Prima di iniziare, chiediti:
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm text-ink/80">
+                {autovalutazione.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             {!spiegazione && !caricandoSpiegazione && (
